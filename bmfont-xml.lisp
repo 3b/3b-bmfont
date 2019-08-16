@@ -145,7 +145,7 @@
                        (cxml:attribute "y" (f (getf c :y)))
                        (cxml:attribute "page" (getf c :page))
                        ;; non-standard
-                       (cxml:attribute "letter" (when (getf c :char)
+                       (cxml:attribute "letter" (when (getf c :letter)
                                                   (string (getf c :letter)))))))
           (cxml:with-element "kernings"
             (cxml:attribute "count" (hash-table-count (kernings f)))
