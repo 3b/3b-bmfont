@@ -57,57 +57,69 @@
                                    :if-exists :supersede)
          (funcall wf font f))))))
 
-(defun map-glyphs (font function string &key model-y-up texture-y-up)
-  (loop with w = (float (scale-w font))
-        with h = (float (scale-h font))
-        with y = 0
-        with x = 0
-        with line = (line-height font)
-        with space = (or (getf (gethash #\space (chars font)) :xadvance)
-                         ;; try to guess a good 'space' size if font
-                         ;; doesn't have space char
-                         (getf (gethash #\n (chars font)) :xadvance)
-                         (/ (loop for c in (alexandria:hash-table-values
-                                            (chars font))
-                                  sum (or (getf c :xadvance) 0))
-                            (float (hash-table-count (chars font)))))
-        for p = nil then c
-        for c across string
-        for char = (or (gethash c (chars font))
-                       (gethash :invalid (chars font))
-                       (list :xoffset 0 :yoffset 0 :x 0 :y 0
-                             :width 0 :height 0 :xadvance 0))
-        for k = (gethash (cons p c) (kernings font) 0)
-        do (unless (zerop k)
-             (format t "kerning ~s ~s = ~s~%" p c k))
-           (case c
-             (#\newline
-              (setf x 0)
-              (incf y line))
-             (#\space
-              (incf x space))
-             (#\tab
-              ;; todo: make this configurable, add tab stop option?
-              (incf x (* 8 space)))
-             (t
-              (incf x k)
-              (let ((x- (+ x (getf char :xoffset)))
-                    (y- (+ y (getf char :yoffset)))
-                    (x+ (+ x (getf char :xoffset) (getf char :width)))
-                    (y+ (+ y (getf char :yoffset) (getf char :height)))
-                    (u- (/ (getf char :x) w))
-                    (v- (/ (getf char :y) h))
-                    (u+ (/ (+ (getf char :x) (getf char :width)) w))
-                    (v+ (/ (+ (getf char :y) (getf char :height)) h)))
-                (when model-y-up
-                  (psetf y- (- line y+)
-                         y+ (- line y-)))
-                (when texture-y-up
-                  (psetf v- (- 1 v+)
-                         v+ (- 1 v-)))
-                (funcall function x- y- x+ y+ u- v- u+ v+))
-              (incf x (getf char :xadvance))))))
+(defun call-with-glyph-info (function font char &key model-y-up texture-y-up)
+  (let ((prev NIL)
+        (x 0) (y 0)
+        (w (float (scale-w font)))
+        (h (float (scale-h font)))
+        (line (line-height font))
+        (space (or (getf (gethash #\space (chars font)) :xadvance)
+                   ;; try to guess a good 'space' size if font
+                   ;; doesn't have space char
+                   (getf (gethash #\n (chars font)) :xadvance)
+                   (/ (loop for c in (alexandria:hash-table-values
+                                      (chars font))
+                            sum (or (getf c :xadvance) 0))
+                      (float (hash-table-count (chars font))))))
+        (char-map (chars font))
+        (kern-map (kernings font)))
+    (flet ((call-for (char)
+             (let ((info (or (gethash char char-map)
+                             (gethash :invalid char-map)
+                             (list :xoffset 0 :yoffset 0 :x 0 :y 0
+                                   :width 0 :height 0 :xadvance 0)))
+                   (kern (gethash (cons prev char) kern-map 0)))
+               (case char
+                 (#\newline
+                  (setf x 0)
+                  (incf y line))
+                 (#\space
+                  (incf x space))
+                 (#\tab
+                  ;; todo: make this configurable, add tab stop option?
+                  (incf x (* 8 space)))
+                 (t
+                  (incf x kern)
+                  (let ((x- (+ x (getf info :xoffset)))
+                        (y- (+ y (getf info :yoffset)))
+                        (x+ (+ x (getf info :xoffset) (getf info :width)))
+                        (y+ (+ y (getf info :yoffset) (getf info :height)))
+                        (u- (/ (getf info :x) w))
+                        (v- (/ (getf info :y) h))
+                        (u+ (/ (+ (getf info :x) (getf info :width)) w))
+                        (v+ (/ (+ (getf info :y) (getf info :height)) h)))
+                    (incf x (getf info :xadvance))
+                    (when model-y-up
+                      (psetf y- (- line y+)
+                             y+ (- line y-)))
+                    (when texture-y-up
+                      (psetf v- (- 1 v+)
+                             v+ (- 1 v-)))
+                    (funcall function x- y- x+ y+ u- v- u+ v+)))))))
+      (loop for next = (call-for char)
+            while next
+            do (shiftf prev char next)))))
 
+(defun map-glyphs (font function string &key model-y-up texture-y-up)
+  (let ((i 0)
+        (length (length string)))
+    (when (< 0 length)
+      (flet ((thunk (&rest args)
+               (incf i)
+               (apply function args)
+               (when (< i length)
+                 (char string i))))
+        (call-with-glyph-info #'thunk font (char string 0) :model-y-up model-y-up :texture-y-up texture-y-up)))))
 
 #++
 (ql:quickload '3b-bmfont/xml)

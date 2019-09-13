@@ -82,4 +82,5 @@
            #:red-chnl
            #:green-chnl
            #:blue-chnl
+           #:call-with-glyph-info
            #:map-glyphs))
