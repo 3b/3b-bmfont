@@ -57,14 +57,12 @@
                                    :if-exists :supersede)
          (funcall wf font f))))))
 
-
-(defun map-glyphs (font function string &key y-up)
+(defun map-glyphs (font function string &key model-y-up texture-y-up)
   (loop with w = (float (scale-w font))
         with h = (float (scale-h font))
-        with y = (if y-up
-                     (- (base font))
-                     (base font))
+        with y = 0
         with x = 0
+        with line = (line-height font)
         with space = (or (getf (gethash #\space (chars font)) :xadvance)
                          ;; try to guess a good 'space' size if font
                          ;; doesn't have space char
@@ -85,9 +83,7 @@
            (case c
              (#\newline
               (setf x 0)
-              (incf y (if y-up
-                          (- (line-height font))
-                          (line-height font))))
+              (incf y line))
              (#\space
               (incf x space))
              (#\tab
@@ -95,22 +91,21 @@
               (incf x (* 8 space)))
              (t
               (incf x k)
-              (funcall function
-                       (+ x (getf char :xoffset))
-                       (if y-up
-                           (+ y (- (getf char :yoffset))
-                              (- (getf char :height)))
-                           (+ y (getf char :yoffset)))
-                       (+ x (getf char :xoffset)
-                          (getf char :width))
-                       (if y-up
-                           (+ y (- (getf char :yoffset)))
-                           (+ y (getf char :yoffset) (getf char :height)))
-                       (/ (getf char :x) w) (/ (getf char :y) h)
-                       (/ (+ (getf char :x) (getf char :width))
-                          w)
-                       (/ (+ (getf char :y) (getf char :height))
-                          h))
+              (let ((x- (+ x (getf char :xoffset)))
+                    (y- (+ y (getf char :yoffset)))
+                    (x+ (+ x (getf char :xoffset) (getf char :width)))
+                    (y+ (+ y (getf char :yoffset) (getf char :height)))
+                    (u- (/ (getf char :x) w))
+                    (v- (/ (getf char :y) h))
+                    (u+ (/ (+ (getf char :x) (getf char :width)) w))
+                    (v+ (/ (+ (getf char :y) (getf char :height)) h)))
+                (when model-y-up
+                  (psetf y- (- line y+)
+                         y+ (- line y-)))
+                (when texture-y-up
+                  (psetf v- (- 1 v+)
+                         v+ (- 1 v-)))
+                (funcall function x- y- x+ y+ u- v- u+ v+))
               (incf x (getf char :xadvance))))))
 
 
