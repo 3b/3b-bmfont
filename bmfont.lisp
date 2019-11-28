@@ -57,7 +57,7 @@
                                    :if-exists :supersede)
          (funcall wf font f))))))
 
-(defun map-glyphs (font function string &key model-y-up texture-y-up)
+(defun map-glyphs (font function string &key model-y-up texture-y-up start end)
   (loop with w = (float (scale-w font))
         with h = (float (scale-h font))
         with y = 0
@@ -72,7 +72,8 @@
                                   sum (or (getf c :xadvance) 0))
                             (float (hash-table-count (chars font)))))
         for p = nil then c
-        for c across string
+        for i from (or start 0) below (or end (length string))
+        for c = (aref string i)
         for char = (or (gethash c (chars font))
                        (gethash :invalid (chars font))
                        (list :xoffset 0 :yoffset 0 :x 0 :y 0
