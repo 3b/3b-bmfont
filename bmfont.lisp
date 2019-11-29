@@ -57,20 +57,23 @@
                                    :if-exists :supersede)
          (funcall wf font f))))))
 
+(defun space-size (font)
+  (or (getf (gethash #\space (chars font)) :xadvance)
+      ;; try to guess a good 'space' size if font
+      ;; doesn't have space char
+      (getf (gethash #\n (chars font)) :xadvance)
+      (/ (loop for c in (alexandria:hash-table-values
+                         (chars font))
+               sum (or (getf c :xadvance) 0))
+         (float (hash-table-count (chars font))))))
+
 (defun map-glyphs (font function string &key model-y-up texture-y-up start end)
   (loop with w = (float (scale-w font))
         with h = (float (scale-h font))
         with y = 0
         with x = 0
         with line = (line-height font)
-        with space = (or (getf (gethash #\space (chars font)) :xadvance)
-                         ;; try to guess a good 'space' size if font
-                         ;; doesn't have space char
-                         (getf (gethash #\n (chars font)) :xadvance)
-                         (/ (loop for c in (alexandria:hash-table-values
-                                            (chars font))
-                                  sum (or (getf c :xadvance) 0))
-                            (float (hash-table-count (chars font)))))
+        with space = (space-size font)
         for p = nil then c
         for i from (or start 0) below (or end (length string))
         for c = (aref string i)
@@ -109,6 +112,34 @@
                 (funcall function x- y- x+ y+ u- v- u+ v+))
               (incf x (getf char :xadvance))))))
 
+(defun measure-glyphs (font string &key start end)
+  (loop with y = 0
+        with x = 0
+        with line = (line-height font)
+        with space = (space-size font)
+        for p = nil then c
+        for i from (or start 0) below (or end (length string))
+        for c = (aref string i)
+        for char = (or (gethash c (chars font))
+                       (gethash :invalid (chars font))
+                       (list :xoffset 0 :yoffset 0
+                             :width 0 :height 0 :xadvance 0))
+        for k = (gethash (cons p c) (kernings font) 0)
+        do (unless (zerop k)
+             (format t "kerning ~s ~s = ~s~%" p c k))
+           (case c
+             (#\newline
+              (setf x 0)
+              (incf y line))
+             (#\space
+              (incf x space))
+             (#\tab
+              ;; todo: make this configurable, add tab stop option?
+              (incf x (* 8 space)))
+             (t
+              (incf x k)
+              (incf x (getf char :xadvance))))
+        finally (return (values x (+ y (base font))))))
 
 #++
 (ql:quickload '3b-bmfont/xml)
