@@ -37,7 +37,8 @@
        ;; should be singleton nodes
        (assert (not (getf *font* k)))
        (setf (getf *font* k) atts)
-       (when (eq k :common)
+       (when (and (eq k :common)
+                  (null (getf *font* :pages)))
          (setf (getf *font* :pages)
                (make-array (getf atts :pages)
                            :fill-pointer 0))))
