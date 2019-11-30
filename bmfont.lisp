@@ -87,9 +87,7 @@
         for c = (aref string i)
         for char = (char-data c font)
         for k = (gethash (cons p c) (kernings font) 0)
-        do (unless (zerop k)
-             (format t "kerning ~s ~s = ~s~%" p c k))
-           (case c
+        do (case c
              (#\newline
               (setf x 0)
               (incf y line))
@@ -127,9 +125,7 @@
         for c = (aref string i)
         for char = (char-data c font)
         for k = (gethash (cons p c) (kernings font) 0)
-        do (unless (zerop k)
-             (format t "kerning ~s ~s = ~s~%" p c k))
-           (case c
+        do (case c
              (#\newline
               (setf x 0)
               (incf y line))
