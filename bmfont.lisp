@@ -67,6 +67,14 @@
                sum (or (getf c :xadvance) 0))
          (float (hash-table-count (chars font))))))
 
+(defun char-data (char font)
+  (let ((chars (chars font)))
+    (or (gethash char chars)
+        (gethash :invalid chars)
+        (gethash (code-char #xFFFD) chars)
+        (list :xoffset 0 :yoffset 0 :x 0 :y 0
+              :width 0 :height 0 :xadvance 0))))
+
 (defun map-glyphs (font function string &key model-y-up texture-y-up start end)
   (loop with w = (float (scale-w font))
         with h = (float (scale-h font))
@@ -77,14 +85,9 @@
         for p = nil then c
         for i from (or start 0) below (or end (length string))
         for c = (aref string i)
-        for char = (or (gethash c (chars font))
-                       (gethash :invalid (chars font))
-                       (list :xoffset 0 :yoffset 0 :x 0 :y 0
-                             :width 0 :height 0 :xadvance 0))
+        for char = (char-data c font)
         for k = (gethash (cons p c) (kernings font) 0)
-        do (unless (zerop k)
-             (format t "kerning ~s ~s = ~s~%" p c k))
-           (case c
+        do (case c
              (#\newline
               (setf x 0)
               (incf y line))
@@ -120,14 +123,9 @@
         for p = nil then c
         for i from (or start 0) below (or end (length string))
         for c = (aref string i)
-        for char = (or (gethash c (chars font))
-                       (gethash :invalid (chars font))
-                       (list :xoffset 0 :yoffset 0
-                             :width 0 :height 0 :xadvance 0))
+        for char = (char-data c font)
         for k = (gethash (cons p c) (kernings font) 0)
-        do (unless (zerop k)
-             (format t "kerning ~s ~s = ~s~%" p c k))
-           (case c
+        do (case c
              (#\newline
               (setf x 0)
               (incf y line))
