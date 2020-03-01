@@ -133,7 +133,7 @@
                 (string-downcase
                  (getf (distance-field f) :field-type))
                 (getf (distance-field f) :distance-range)))
-      (format t "chars count=~a~%"
+      (format stream "chars count=~a~%"
               (hash-table-count (chars f)))
       (loop
         for c in (sort (alexandria:hash-table-values
