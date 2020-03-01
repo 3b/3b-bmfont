@@ -35,27 +35,36 @@
         (t
          (error "unable to detect format of file ~s?" filename))))))
 
-(defun write-bmfont (font filename &key (type :text))
-  (ecase type
-    (:text
-     (let ((wf (fs '#:write-bmfont-text '#:3b-bmfont-text)))
-       (with-open-file (f filename :direction :output
-                                   :if-does-not-exist :create
-                                   :if-exists :supersede)
-         (funcall wf font f))))
-    (:xml
-     (let ((wf (fs '#:write-bmfont-xml '#:3b-bmfont-xml)))
-       (with-open-file (f filename :direction :output
-                                   :if-does-not-exist :create
-                                   :if-exists :supersede
-                                   :element-type '(unsigned-byte 8))
-         (funcall wf font f))))
-    (:json
-     (let ((wf (fs '#:write-bmfont-json '#:3b-bmfont-json)))
-       (with-open-file (f filename :direction :output
-                                   :if-does-not-exist :create
-                                   :if-exists :supersede)
-         (funcall wf font f))))))
+(defun write-bmfont (font filename &key type)
+  (let ((type (cond (type type)
+                    ((string-equal "txt" (pathname-type filename)) :text)
+                    ((string-equal "json" (pathname-type filename)) :json)
+                    ((string-equal "xml" (pathname-type filename)) :xml)
+                    (T (restart-case (error "Unknown file format ~s.~%Please specify the desired format type." (pathname-type filename))
+                         (specify-type (type)
+                           :interactive (lambda () (read *query-io*))
+                           :report "Specify a new type."
+                           type))))))
+    (ecase type
+      (:text
+       (let ((wf (fs '#:write-bmfont-text '#:3b-bmfont-text)))
+         (with-open-file (f filename :direction :output
+                                     :if-does-not-exist :create
+                                     :if-exists :supersede)
+           (funcall wf font f))))
+      (:xml
+       (let ((wf (fs '#:write-bmfont-xml '#:3b-bmfont-xml)))
+         (with-open-file (f filename :direction :output
+                                     :if-does-not-exist :create
+                                     :if-exists :supersede
+                                     :element-type '(unsigned-byte 8))
+           (funcall wf font f))))
+      (:json
+       (let ((wf (fs '#:write-bmfont-json '#:3b-bmfont-json)))
+         (with-open-file (f filename :direction :output
+                                     :if-does-not-exist :create
+                                     :if-exists :supersede)
+           (funcall wf font f)))))))
 
 (defun space-size (font)
   (or (getf (gethash #\space (chars font)) :xadvance)
