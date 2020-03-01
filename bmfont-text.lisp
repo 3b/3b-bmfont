@@ -140,7 +140,7 @@
                         (chars f))
                        '<
                        :key (lambda (a) (getf a :id)))
-        do (format stream "char id=~a x=~a y=~a~@[ index=~a~]~@[ char=\"~c\"~] ~
+        do (format stream "char id=~a x=~a y=~a~@[ index=~a~]~@[ char=\"~a\"~] ~
                            width=~a height=~a xoffset=~a yoffset=~a ~
                            xadvance=~a page=~a chnl=~a~
                            ~@[ letter=\"~c\"~]~%"
