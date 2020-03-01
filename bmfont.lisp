@@ -38,20 +38,20 @@
 (defun write-bmfont (font filename &key (type :text))
   (ecase type
     (:text
-     (let ((wf (fs '#:read-bmfont-text '#:3b-bmfont-text)))
+     (let ((wf (fs '#:write-bmfont-text '#:3b-bmfont-text)))
        (with-open-file (f filename :direction :output
                                    :if-does-not-exist :create
                                    :if-exists :supersede)
          (funcall wf font f))))
     (:xml
-     (let ((wf (fs '#:read-bmfont-xml '#:3b-bmfont-xml)))
+     (let ((wf (fs '#:write-bmfont-xml '#:3b-bmfont-xml)))
        (with-open-file (f filename :direction :output
                                    :if-does-not-exist :create
                                    :if-exists :supersede
                                    :element-type '(unsigned-byte 8))
          (funcall wf font f))))
     (:json
-     (let ((wf (fs '#:read-bmfont-json '#:3b-bmfont-json)))
+     (let ((wf (fs '#:write-bmfont-json '#:3b-bmfont-json)))
        (with-open-file (f filename :direction :output
                                    :if-does-not-exist :create
                                    :if-exists :supersede)
