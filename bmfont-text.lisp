@@ -133,14 +133,14 @@
                 (string-downcase
                  (getf (distance-field f) :field-type))
                 (getf (distance-field f) :distance-range)))
-      (format t "chars count=~a~%"
+      (format stream "chars count=~a~%"
               (hash-table-count (chars f)))
       (loop
         for c in (sort (alexandria:hash-table-values
                         (chars f))
                        '<
                        :key (lambda (a) (getf a :id)))
-        do (format stream "char id=~a x=~a y=~a~@[ index=~a~]~@[ char=\"~c\"~] ~
+        do (format stream "char id=~a x=~a y=~a~@[ index=~a~]~@[ char=\"~a\"~] ~
                            width=~a height=~a xoffset=~a yoffset=~a ~
                            xadvance=~a page=~a chnl=~a~
                            ~@[ letter=\"~c\"~]~%"
