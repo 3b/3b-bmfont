@@ -114,7 +114,7 @@
         ("common"
          (jsown:new-js
            ("lineHeight" (line-height f))
-           ("base "(base f))
+           ("base" (base f))
            ("scaleW" (scale-w f))
            ("scaleH"(scale-h f))
            ("pages"(length (pages f)))
