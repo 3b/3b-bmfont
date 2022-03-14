@@ -26,13 +26,22 @@
                            (:kernings "kerning"))
                          v)))
       (:pages
-       (assert (not (getf *font* k)))
-       (setf (getf *font* k)
-             (coerce
-              (loop for p in values
-                    for i from 0
-                    collect (list :id i :file p))
-              'vector)))
+       (let ((pages (getf *font* k)))
+         (cond
+           (pages
+            (assert (fill-pointer pages))
+            (assert (<= (+ (fill-pointer pages) (length values))
+                        (array-dimension pages 0)))
+            (loop for p in values
+                  for i from (fill-pointer pages)
+                  do (vector-push-extend (list :id i :file p) pages)))
+           (t
+            (setf (getf *font* k)
+                  (coerce
+                   (loop for p in values
+                         for i from 0
+                         collect (list :id i :file p))
+                   'vector))))))
       ((:info :common :distance-field)
        ;; should be singleton nodes
        (assert (not (getf *font* k)))
