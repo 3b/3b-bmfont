@@ -179,7 +179,7 @@
              ("fieldType" (string-downcase
                            (getf (distance-field f) :field-type "")))
              ("distanceRange"
-              (getf (distance-field f) :field-type 0))))))
+              (getf (distance-field f) :distance-range 0))))))
       (format
        stream
        "~a"
