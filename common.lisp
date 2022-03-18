@@ -11,6 +11,7 @@
    (stretch-h :accessor stretch-h :initarg :stretch-h :initform 100)
    (smooth :accessor smooth :initform nil :initarg :smooth)
    (aa :accessor aa :initarg :aa :initform nil)
+   ;; padding =   (up, right, down, left)
    (padding :accessor padding :initform '(0 0 0 0) :initarg :padding)
    (spacing :accessor spacing :initarg :spacing :initform '(0 0))
    ;; 'common' fields
@@ -31,6 +32,15 @@
    ;; extension to bmfont spec from msdf-bmfont-xml
    (distance-field :accessor distance-field :initarg :distance-field)))
 
+
+(defmethod padding-up ((f bmfont))
+  (first (padding f)))
+(defmethod padding-right ((f bmfont))
+  (second (padding f)))
+(defmethod padding-down ((f bmfont))
+  (third (padding f)))
+(defmethod padding-left ((f bmfont))
+  (fourth (padding f)))
 
 ;;; common utilities used by parsers
 (defun remap-char (c)

@@ -33,7 +33,11 @@
            #:make-keyword
            #:filter-plist
            #:*filters*
-           #:char-id))
+           #:char-id
+           #:padding-up
+           #:padding-right
+           #:padding-down
+           #:padding-left))
 
 ;; fixme: move these to separate files?
 (defpackage #:3b-bmfont-xml
@@ -72,6 +76,10 @@
            #:smooth
            #:aa
            #:padding
+           #:padding-up
+           #:padding-right
+           #:padding-down
+           #:padding-left
            #:spacing
            #:line-height
            #:base
