@@ -104,11 +104,12 @@
               :width 0 :height 0 :xadvance 0
               :origin '(0 0) :origin-y-up '(0 0)))))
 
-(defun map-glyphs (font function string &key model-y-up texture-y-up start end)
-  (loop with w = (float (scale-w font))
-        with h = (float (scale-h font))
-        with y = 0
-        with x = 0
+(defun map-glyphs (font function string &key model-y-up texture-y-up start end
+                                          extra-space (x 0) (y 0))
+  (loop with sw = (float (scale-w font))
+        with sh = (float (scale-h font))
+        with y = y
+        with x = x
         with line = (line-height font)
         with space = (space-size font)
         for p = nil then c
@@ -116,10 +117,13 @@
         for c = (aref string i)
         for char = (char-data c font)
         for k = (gethash (cons p c) (kernings font) 0)
+        for (dx dy) = (if model-y-up
+                          (getf char :origin-y-up)
+                          (getf char :origin))
         do (case c
              (#\newline
               (setf x 0)
-              (incf y line))
+              (incf y (if model-y-up (- line) line)))
              (#\space
               (incf x space))
              (#\tab
@@ -127,22 +131,27 @@
               (incf x (* 8 space)))
              (t
               (incf x k)
-              (let ((x- (+ x (getf char :xoffset)))
-                    (y- (+ y (getf char :yoffset)))
-                    (x+ (+ x (getf char :xoffset) (getf char :width)))
-                    (y+ (+ y (getf char :yoffset) (getf char :height)))
-                    (u- (/ (getf char :x) w))
-                    (v- (/ (getf char :y) h))
-                    (u+ (/ (+ (getf char :x) (getf char :width)) w))
-                    (v+ (/ (+ (getf char :y) (getf char :height)) h)))
-                (when model-y-up
-                  (psetf y- (- line y+)
-                         y+ (- line y-)))
+              (let* ((x- (+ x dx))
+                     (y- (+ y dy))
+                     (cw (getf char :width))
+                     (ch (getf char :height))
+                     (x+ (+ x- cw))
+                     (y+ (if model-y-up
+                             (- y- ch)
+                             (+ y- ch)))
+                     (cx (getf char :x))
+                     (cy (getf char :y))
+                     (u- (/ cx sw))
+                     (v- (/ cy sh))
+                     (u+ (/ (+ cx cw) sw))
+                     (v+ (/ (+ cy ch) sh)))
                 (when texture-y-up
-                  (psetf v- (- 1 v+)
-                         v+ (- 1 v-)))
+                  (psetf v- (- 1 v-)
+                         v+ (- 1 v+)))
                 (funcall function x- y- x+ y+ u- v- u+ v+))
-              (incf x (getf char :xadvance))))))
+              (incf x (getf char :xadvance))
+              (when extra-space (incf x extra-space))))
+        finally (return (values x y))))
 
 (defun measure-glyphs (font string &key start end)
   (loop with y = 0
