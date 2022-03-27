@@ -8,32 +8,51 @@
     (when p
       (find-symbol (string f) p))))
 
+(defun add-origins (font)
+  ;; pre-calculate offsets to move glyph to baseline, accounting for
+  ;; padding and Y-Axis direction
+  (when font
+    (loop with (nil nil down nil) = (padding font) ;; up right down left
+          with chars = (chars font)
+          with base = (base font)
+          for c being the hash-keys of chars
+            using (hash-value v)
+          unless (getf v :origin)
+            do (let ((x (getf v :xoffset))
+                     (y (getf v :yoffset)))
+                 (setf (getf (gethash c chars) :origin)
+                       (list x (- y down base)))
+                 (setf (getf (gethash c chars) :origin-y-up)
+                       (list x (- base (- y down)))))))
+  font)
+
 (defun read-bmfont (filename)
-  (with-open-file (f filename)
-    (let ((c (peek-char t f nil nil)))
-      (case c
-        (#\<
-         (let ((rf (fs '#:read-bmfont-xml '#:3b-bmfont-xml)))
-           (if rf
-               (funcall rf f)
-               (error "can't read font metadata from ~s, xml backend not loaded"
-                      filename))))
-        (#\{
-         (let ((rf (fs '#:read-bmfont-json '#:3b-bmfont-json)))
-           (if rf
-               (funcall rf f)
-               (error "can't read font metadata from ~s, json backend not loaded"
-                      filename))))
-        (#\i
-         (let ((rf (fs '#:read-bmfont-text '#:3b-bmfont-text)))
-           (if rf
-               (funcall rf f)
-               (error "can't read font metadata from ~s, text backend not loaded"
-                      filename))))
-        (#\B
-         (error "binary bmfont metadata format not implemented yet"))
-        (t
-         (error "unable to detect format of file ~s?" filename))))))
+  (add-origins
+   (with-open-file (f filename)
+     (let ((c (peek-char t f nil nil)))
+       (case c
+         (#\<
+          (let ((rf (fs '#:read-bmfont-xml '#:3b-bmfont-xml)))
+            (if rf
+                (funcall rf f)
+                (error "can't read font metadata from ~s, xml backend not loaded"
+                       filename))))
+         (#\{
+          (let ((rf (fs '#:read-bmfont-json '#:3b-bmfont-json)))
+            (if rf
+                (funcall rf f)
+                (error "can't read font metadata from ~s, json backend not loaded"
+                       filename))))
+         (#\i
+          (let ((rf (fs '#:read-bmfont-text '#:3b-bmfont-text)))
+            (if rf
+                (funcall rf f)
+                (error "can't read font metadata from ~s, text backend not loaded"
+                       filename))))
+         (#\B
+          (error "binary bmfont metadata format not implemented yet"))
+         (t
+          (error "unable to detect format of file ~s?" filename)))))))
 
 (defun write-bmfont (font filename &key type)
   (let ((type (cond (type type)
@@ -82,7 +101,8 @@
         (gethash :invalid chars)
         (gethash (code-char #xFFFD) chars)
         (list :xoffset 0 :yoffset 0 :x 0 :y 0
-              :width 0 :height 0 :xadvance 0))))
+              :width 0 :height 0 :xadvance 0
+              :origin '(0 0) :origin-y-up '(0 0)))))
 
 (defun map-glyphs (font function string &key model-y-up texture-y-up start end)
   (loop with w = (float (scale-w font))
