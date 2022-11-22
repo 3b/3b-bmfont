@@ -80,7 +80,7 @@
       (setf (pages f) (getf *font* :pages))
       (setf (distance-field f) (getf *font* :distance-field))
       (setf (kernings f)
-            (make-kerning-hash info chars
+            (make-kerning-hash info (chars f)
                                (getf *font* :kernings)))
       f)))
 
@@ -139,40 +139,40 @@
         for c in (sort (alexandria:hash-table-values
                         (chars f))
                        '<
-                       :key (lambda (a) (getf a :id)))
+                       :key (lambda (a) (char-id a)))
         do (format stream "char id=~a x=~a y=~a~@[ index=~a~]~@[ char=\"~a\"~] ~
                            width=~a height=~a xoffset=~a yoffset=~a ~
                            xadvance=~a page=~a chnl=~a~
                            ~@[ letter=\"~c\"~]~%"
                    (char-id c)
-                   (f (getf c :x))
-                   (f (getf c :y))
+                   (f (glyph-x c))
+                   (f (glyph-y c))
                    ;; non-standard
-                   (getf c :index)
+                   (glyph-index c)
                    ;; non-standard
-                   (getf c :char)
-                   (f (getf c :width))
-                   (f (getf c :height))
-                   (f (getf c :xoffset))
-                   (f (getf c :yoffset))
-                   (f (getf c :xadvance))
-                   (getf c :page)
-                   (getf c :chnl)
+                   (glyph-char c)
+                   (f (glyph-width c))
+                   (f (glyph-height c))
+                   (f (glyph-xoffset c))
+                   (f (glyph-yoffset c))
+                   (f (glyph-xadvance c))
+                   (glyph-page c)
+                   (glyph-chnl c)
                    ;; non-standard
-                   (getf c :letter)))
+                   (glyph-letter c)))
       (format stream "kernings count=~a~%" (hash-table-count (kernings f)))
       (flet ((id (x)
                (char-id (gethash x (chars f)) x)))
         (loop
-          for ((c1 . c2) . a) in (sort (alexandria:hash-table-alist
-                                        (kernings f))
-                                       (lambda (a b)
-                                         (if (= (id (caar a))
-                                                (id (caar b)))
-                                             (< (id (cdar a))
-                                                (id (cdar b)))
-                                             (< (id (caar a))
-                                                (id (caar b))))))
+          for (kidx . a) in (sort (alexandria:hash-table-alist
+                                   (kernings f))
+                                  (lambda (a b)
+                                    (destructuring-bind (a1 . a2) (kerning-index-characters (car a))
+                                      (destructuring-bind (b1 . b2) (kerning-index-characters (car b))
+                                        (if (= (id a1) (id b1))
+                                            (< (id a2) (id b2))
+                                            (< (id a1) (id a2)))))))
+          for (c1 . c2) = (kerning-index-characters kidx)
           do (format stream "kerning first=~a second=~a amount=~a~%"
                      (id c1)
                      (id c2)

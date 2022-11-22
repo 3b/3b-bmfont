@@ -49,7 +49,7 @@
     (setf (pages(f b)) (getf *font* :pages))
     (setf (distance-field (f b)) (getf *font* :distance-field))
     (setf (kernings (f b))
-          (3b-bmfont::make-kerning-hash info chars
+          (3b-bmfont::make-kerning-hash info (chars (f b))
                                         (getf *font* :kernings)))))
 
 (defun read-bmfont-xml (stream)
@@ -127,40 +127,40 @@
             (loop for c in (sort (alexandria:hash-table-values
                                   (chars f))
                                  '<
-                                 :key (lambda (a) (getf a :id)))
+                                 :key (lambda (c) (char-id c)))
                   do (cxml:with-element "char"
                        (cxml:attribute "id" (char-id c))
                        ;; non-standard
-                       (cxml:attribute "index" (getf c :index))
+                       (cxml:attribute "index" (glyph-index c))
                        ;; non-standard
-                       (cxml:attribute "char" (when (getf c :char)
-                                                (string (getf c :char))))
-                       (cxml:attribute "width" (f (getf c :width)))
-                       (cxml:attribute "height" (f (getf c :height)))
-                       (cxml:attribute "xoffset" (f (getf c :xoffset)))
-                       (cxml:attribute "yoffset" (f (getf c :yoffset)))
-                       (cxml:attribute "xadvance" (f (getf c :xadvance)))
-                       (cxml:attribute "chnl" (getf c :chnl))
-                       (cxml:attribute "x" (f (getf c :x)))
-                       (cxml:attribute "y" (f (getf c :y)))
-                       (cxml:attribute "page" (getf c :page))
+                       (cxml:attribute "char" (when (glyph-char c)
+                                                (string (glyph-char c))))
+                       (cxml:attribute "width" (f (glyph-width c)))
+                       (cxml:attribute "height" (f (glyph-height c)))
+                       (cxml:attribute "xoffset" (f (glyph-xoffset c)))
+                       (cxml:attribute "yoffset" (f (glyph-yoffset c)))
+                       (cxml:attribute "xadvance" (f (glyph-xadvance c)))
+                       (cxml:attribute "chnl" (glyph-chnl c))
+                       (cxml:attribute "x" (f (glyph-x c)))
+                       (cxml:attribute "y" (f (glyph-y c)))
+                       (cxml:attribute "page" (glyph-page c))
                        ;; non-standard
-                       (cxml:attribute "letter" (when (getf c :letter)
-                                                  (string (getf c :letter)))))))
+                       (cxml:attribute "letter" (when (glyph-letter c)
+                                                  (string (glyph-letter c)))))))
           (cxml:with-element "kernings"
             (cxml:attribute "count" (hash-table-count (kernings f)))
             (flet ((id (x)
                      (char-id (gethash x (chars f)) x)))
               (loop
-                for ((c1 . c2) . a) in (sort (alexandria:hash-table-alist
-                                              (kernings f))
-                                             (lambda (a b)
-                                               (if (= (id (caar a))
-                                                      (id (caar b)))
-                                                   (< (id (cdar a))
-                                                      (id (cdar b)))
-                                                   (< (id (caar a))
-                                                      (id (caar b))))))
+                for (kidx . a) in (sort (alexandria:hash-table-alist
+                                         (kernings f))
+                                        (lambda (a b)
+                                          (destructuring-bind (a1 . a2) (kerning-index-characters (car a))
+                                            (destructuring-bind (b1 . b2) (kerning-index-characters (car b))
+                                              (if (= (id a1) (id b1))
+                                                  (< (id a2) (id b2))
+                                                  (< (id a1) (id a2)))))))
+                for (c1 . c2) = (kerning-index-characters kidx)
                 do (cxml:with-element "kerning"
                      (cxml:attribute "first" (id c1))
                      (cxml:attribute "second" (id c2))

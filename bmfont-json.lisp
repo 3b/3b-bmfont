@@ -81,7 +81,7 @@
       (setf (pages f) (getf *font* :pages))
       (setf (distance-field f) (getf *font* :distance-field))
       (setf (kernings f)
-            (make-kerning-hash info chars
+            (make-kerning-hash info (chars f)
                                (getf *font* :kernings)))
       f)))
 
@@ -134,43 +134,43 @@
            for c in (sort (alexandria:hash-table-values
                            (chars f))
                           '<
-                          :key (lambda (a) (getf a :id)))
+                          :key (lambda (a) (char-id a)))
            for j = (jsown:new-js
                      ("id"(char-id c))
-                     ("x"(getf c :x))
-                     ("y"(getf c :y))
-                     ("width"(getf c :width))
-                     ("height"(getf c :height))
-                     ("xoffset"(getf c :xoffset))
-                     ("yoffset"(getf c :yoffset))
-                     ("xadvance"(getf c :xadvance))
-                     ("page"(getf c :page))
-                     ("chnl"(getf c :chnl)))
+                     ("x"(glyph-x c))
+                     ("y"(glyph-y c))
+                     ("width"(glyph-width c))
+                     ("height"(glyph-height c))
+                     ("xoffset"(glyph-xoffset c))
+                     ("yoffset"(glyph-yoffset c))
+                     ("xadvance"(glyph-xadvance c))
+                     ("page"(glyph-page c))
+                     ("chnl"(glyph-chnl c)))
            ;; non-standard
-           when (getf c :indes)
-             do (jsown:extend-js j ("index"(getf c :index)))
-           when (getf c :char)
-             do (jsown:extend-js j ("char"(getf c :char)))
-           when (getf c :letter)
-             do (jsown:extend-js j ("letter"(getf c :letter)))
+           when (glyph-index c)
+             do (jsown:extend-js j ("index"(glyph-index c)))
+           when (glyph-char c)
+             do (jsown:extend-js j ("char"(glyph-char c)))
+           when (glyph-letter c)
+             do (jsown:extend-js j ("letter"(glyph-letter c)))
            collect j))
         ("kernings"
          (flet ((id (x)
                   (char-id (gethash x (chars f)) x)))
            (loop
-             for ((c1 . c2) . a) in (sort (alexandria:hash-table-alist
-                                           (kernings f))
-                                          (lambda (a b)
-                                            (if (= (id (caar a))
-                                                   (id (caar b)))
-                                                (< (id (cdar a))
-                                                   (id (cdar b)))
-                                                (< (id (caar a))
-                                                   (id (caar b))))))
-             collect (jsown:new-js
-                       ("first"(id c1))
-                       ("second"(id c2))
-                       ("amount" a))))))
+             for (kidx . a) in (sort (alexandria:hash-table-alist
+                                      (kernings f))
+                                     (lambda (a b)
+                                       (destructuring-bind (a1 . a2) (kerning-index-characters (car a))
+                                         (destructuring-bind (b1 . b2) (kerning-index-characters (car b))
+                                           (if (= (id a1) (id b1))
+                                               (< (id a2) (id b2))
+                                               (< (id a1) (id a2)))))))
+             for (c1 . c2) = (kerning-index-characters kidx)
+             do (jsown:new-js
+                  ("first"(id c1))
+                  ("second"(id c2))
+                  ("amount" a))))))
       (when (distance-field f)
         (jsown:extend-js
             json
