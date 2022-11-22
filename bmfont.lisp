@@ -17,13 +17,11 @@
           with base = (base font)
           for c being the hash-keys of chars
             using (hash-value v)
-          unless (getf v :origin)
-            do (let ((x (getf v :xoffset))
-                     (y (getf v :yoffset)))
-                 (setf (getf (gethash c chars) :origin)
-                       (list x (- y down base)))
-                 (setf (getf (gethash c chars) :origin-y-up)
-                       (list x (- base (- y down)))))))
+          unless (glyph-origin v)
+            do (let ((x (glyph-xoffset v))
+                     (y (glyph-yoffset v)))
+                 (setf (glyph-origin v) (list x (- y down base)))
+                 (setf (glyph-origin-y-up v) (list x (- base (- y down)))))))
   font)
 
 (defun read-bmfont (filename)
@@ -86,13 +84,13 @@
            (funcall wf font f)))))))
 
 (defun space-size (font)
-  (or (getf (gethash #\space (chars font)) :xadvance)
+  (or (glyph-xadvance (gethash #\space (chars font)))
       ;; try to guess a good 'space' size if font
       ;; doesn't have space char
-      (getf (gethash #\n (chars font)) :xadvance)
+      (glyph-xadvance (gethash #\n (chars font)))
       (/ (loop for c in (alexandria:hash-table-values
                          (chars font))
-               sum (or (getf c :xadvance) 0))
+               sum (or (glyph-xadvance c) 0))
          (float (hash-table-count (chars font))))))
 
 (defun char-data (char font)
@@ -100,9 +98,7 @@
     (or (gethash char chars)
         (gethash :invalid chars)
         (gethash (code-char #xFFFD) chars)
-        (list :xoffset 0 :yoffset 0 :x 0 :y 0
-              :width 0 :height 0 :xadvance 0
-              :origin '(0 0) :origin-y-up '(0 0)))))
+        (load-time-value (make-glyph)))))
 
 (defun map-glyphs (font function string &key model-y-up texture-y-up start end
                                           extra-space (x 0) (y 0))
@@ -118,8 +114,8 @@
         for char = (char-data c font)
         for k = (gethash (cons p c) (kernings font) 0)
         for (dx dy) = (if model-y-up
-                          (getf char :origin-y-up)
-                          (getf char :origin))
+                          (glyph-origin-y-up char)
+                          (glyhp-origin char))
         do (case c
              (#\newline
               (setf x 0)
@@ -133,14 +129,14 @@
               (incf x k)
               (let* ((x- (+ x dx))
                      (y- (+ y dy))
-                     (cw (getf char :width))
-                     (ch (getf char :height))
+                     (cw (glyph-width char))
+                     (ch (glyph-width char))
                      (x+ (+ x- cw))
                      (y+ (if model-y-up
                              (- y- ch)
                              (+ y- ch)))
-                     (cx (getf char :x))
-                     (cy (getf char :y))
+                     (cx (glyph-x char))
+                     (cy (glyph-y char))
                      (u- (/ cx sw))
                      (v- (/ cy sh))
                      (u+ (/ (+ cx cw) sw))
@@ -149,7 +145,7 @@
                   (psetf v- (- 1 v-)
                          v+ (- 1 v+)))
                 (funcall function x- y- x+ y+ u- v- u+ v+))
-              (incf x (getf char :xadvance))
+              (incf x (glyph-xadvance char))
               (when extra-space (incf x extra-space))))
         finally (return (values x y))))
 
@@ -174,7 +170,7 @@
               (incf x (* 8 space)))
              (t
               (incf x k)
-              (incf x (getf char :xadvance))))
+              (incf x (glyph-xadvance char))))
         finally (return (values x (+ y (base font))))))
 
 #++

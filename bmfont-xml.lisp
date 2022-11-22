@@ -49,7 +49,7 @@
     (setf (pages(f b)) (getf *font* :pages))
     (setf (distance-field (f b)) (getf *font* :distance-field))
     (setf (kernings (f b))
-          (3b-bmfont::make-kerning-hash info chars
+          (3b-bmfont::make-kerning-hash info (chars (f b))
                                         (getf *font* :kernings)))))
 
 (defun read-bmfont-xml (stream)

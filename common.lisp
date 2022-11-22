@@ -1,5 +1,22 @@
 (in-package :3b-bmfont-common)
 
+(defstruct glyph
+  (id 0 :type (signed-byte 32))
+  (x 0 :type (unsigned-byte 32))
+  (y 0 :type (unsigned-byte 32))
+  (width 0 :type (unsigned-byte 32))
+  (height 0 :type (unsigned-byte 32))
+  (xoffset 0.0 :type single-float)
+  (yoffset 0.0 :type single-float)
+  (xadvance 0 :type (unsigned-byte 32))
+  (page 0 :type (unsigned-byte 16))
+  (chnl 0 :type (unsigned-byte 32))
+  (char NIL)
+  (letter NIL))
+
+(defmethod make-load-form ((glyph glyph) &optional env)
+  (make-load-form-saving-slots glyph :environment env))
+
 (defclass bmfont ()
   (;; 'info' fields
    (face :accessor face :initarg :face)
@@ -32,7 +49,6 @@
    ;; extension to bmfont spec from msdf-bmfont-xml
    (distance-field :accessor distance-field :initarg :distance-field)))
 
-
 (defmethod padding-up ((f bmfont))
   (first (padding f)))
 (defmethod padding-right ((f bmfont))
@@ -46,17 +62,17 @@
 (defun remap-char (c)
   ;; :letter isn't in real bmfont, but common extension, so use if
   ;; available. same for :char
-  (or (when (getf c :letter)
+  (or (when (glyph-letter c)
         ;; possibly should store as string to allow for ligatures?
-        (assert (= 1 (length (getf c :letter))))
-        (char (getf c :letter) 0))
-      (when (getf c :char)
-        (assert (= 1 (length (getf c :char))))
-        (char (getf c :char) 0))
+        (assert (= 1 (length (glyph-letter c))))
+        (char (glyph-letter c) 0))
+      (when (glyph-letter c)
+        (assert (= 1 (length (glyph-letter c))))
+        (char (glyph-letter c) 0))
       ;; bmfont uses -1 for "missing character" glyph
-      (if (minusp (getf c :id))
+      (if (minusp (glyph-id c))
           :invalid
-          (code-char (getf c :id)))))
+          (code-char (glyph-id c)))))
 
 (defun make-chars-hash (info chars)
   (unless (or (getf info :unicode)
@@ -68,7 +84,19 @@
     (error "only unicode and us-ascii supported currently."))
   (let ((h (make-hash-table)))
     (loop for c across chars
-          do (setf (gethash (remap-char c) h) c))
+          for glyph = (make-glyph :id (getf c :id)
+                                  :x (getf c :x)
+                                  :y (getf c :y)
+                                  :width (getf c :width)
+                                  :height (getf c :height)
+                                  :xoffset (float (getf c :xoffset) 0f0)
+                                  :yoffset (float (getf c :yoffset) 0f0)
+                                  :xadvance (getf c :xadvance)
+                                  :page (getf c :page)
+                                  :chnl (getf c :chnl)
+                                  :char (getf c :char)
+                                  :letter (getf c :letter))
+          do (setf (gethash (remap-char glyph) h) glyph))
     h))
 
 (defun make-kerning-hash (info chars kernings)
@@ -80,8 +108,8 @@
     (error "only unicode and us-ascii supported currently."))
   (let ((id-hash (make-hash-table))
         (h (make-hash-table :test 'equal)))
-    (loop for c across chars
-          for id = (getf c :id)
+    (loop for c being the hash-values of chars
+          for id = (glyph-id c)
           do (setf (gethash id id-hash) (remap-char c)))
     (loop for k across kernings
           for c1 = (getf k :first)
@@ -180,9 +208,9 @@
 
 (defun char-id (c &optional cc)
   (unless cc
-    (setf cc (or (getf c :letter) (getf c :char))))
+    (setf cc (or (glyph-letter c) (glyph-char c))))
   (cond
-    ((getf c :id))
+    ((glyph-id c))
     ((characterp cc) (char-code cc))
     ((eql cc :invalid) -1)
     ((numberp cc) cc)

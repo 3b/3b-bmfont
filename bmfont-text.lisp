@@ -80,7 +80,7 @@
       (setf (pages f) (getf *font* :pages))
       (setf (distance-field f) (getf *font* :distance-field))
       (setf (kernings f)
-            (make-kerning-hash info chars
+            (make-kerning-hash info (chars f)
                                (getf *font* :kernings)))
       f)))
 
