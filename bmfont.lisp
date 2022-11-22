@@ -84,14 +84,14 @@
            (funcall wf font f)))))))
 
 (defun space-size (font)
-  (or (glyph-xadvance (gethash #\space (chars font)))
-      ;; try to guess a good 'space' size if font
-      ;; doesn't have space char
-      (glyph-xadvance (gethash #\n (chars font)))
-      (/ (loop for c in (alexandria:hash-table-values
-                         (chars font))
-               sum (or (glyph-xadvance c) 0))
-         (float (hash-table-count (chars font))))))
+  (let ((glyph (or (gethash #\space (chars font))
+                   (gethash #\n (chars font)))))
+    (if glyph
+        (glyph-xadvance glyph)
+        (/ (loop for c in (alexandria:hash-table-values
+                           (chars font))
+                 sum (or (glyph-xadvance c) 0))
+           (float (hash-table-count (chars font)))))))
 
 (defun char-data (char font)
   (let ((chars (chars font)))
