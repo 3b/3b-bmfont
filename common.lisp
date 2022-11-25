@@ -75,21 +75,27 @@
           (code-char (glyph-id c)))))
 
 (declaim (inline kerning-index))
-(declaim (ftype (function (character character) (unsigned-byte 42)) kerning-index))
+(declaim (ftype (function ((or character fixnum) (or character fixnum)) (unsigned-byte 42)) kerning-index))
 (defun kerning-index (lhs rhs)
-  (ldb (byte 42 0) (+ (char-code lhs) (ash (char-code rhs) 21))))
+  (let ((lhs (etypecase lhs
+               (character (char-code lhs))
+               (fixnum lhs)))
+        (rhs (etypecase rhs
+               (character (char-code rhs))
+               (fixnum rhs))))
+    (ldb (byte 42 0) (+ lhs (ash rhs 21)))))
 
 (defun kerning-index-characters (idx)
   (cons (code-char (ldb (byte 21 0) idx))
         (code-char (ldb (byte 21 21) idx))))
 
 (declaim (inline %kerning))
-(declaim (ftype (function (hash-table character character) single-float) %kerning))
+(declaim (ftype (function (hash-table T T) single-float) %kerning))
 (defun %kerning (table lhs rhs)
   (gethash (kerning-index lhs rhs) table 0f0))
 
 (defun (setf %kerning) (value table lhs rhs)
-  (setf (gethash (ldb (byte 42 0) (+ (char-code lhs) (ash (char-code rhs) 21))) table) (float value 0f0)))
+  (setf (gethash (kerning-index lhs rhs) table) (float value 0f0)))
 
 (defun kerning (font lhs rhs)
   (%kerning (kernings font) lhs rhs))
