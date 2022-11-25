@@ -139,27 +139,27 @@
         for c in (sort (alexandria:hash-table-values
                         (chars f))
                        '<
-                       :key (lambda (a) (getf a :id)))
+                       :key (lambda (a) (char-id a)))
         do (format stream "char id=~a x=~a y=~a~@[ index=~a~]~@[ char=\"~a\"~] ~
                            width=~a height=~a xoffset=~a yoffset=~a ~
                            xadvance=~a page=~a chnl=~a~
                            ~@[ letter=\"~c\"~]~%"
                    (char-id c)
-                   (f (getf c :x))
-                   (f (getf c :y))
+                   (f (glyph-x c))
+                   (f (glyph-y c))
                    ;; non-standard
-                   (getf c :index)
+                   (glyph-index c)
                    ;; non-standard
-                   (getf c :char)
-                   (f (getf c :width))
-                   (f (getf c :height))
-                   (f (getf c :xoffset))
-                   (f (getf c :yoffset))
-                   (f (getf c :xadvance))
-                   (getf c :page)
-                   (getf c :chnl)
+                   (glyph-char c)
+                   (f (glyph-width c))
+                   (f (glyph-height c))
+                   (f (glyph-xoffset c))
+                   (f (glyph-yoffset c))
+                   (f (glyph-xadvance c))
+                   (glyph-page c)
+                   (glyph-chnl c)
                    ;; non-standard
-                   (getf c :letter)))
+                   (glyph-letter c)))
       (format stream "kernings count=~a~%" (hash-table-count (kernings f)))
       (flet ((id (x)
                (char-id (gethash x (chars f)) x)))

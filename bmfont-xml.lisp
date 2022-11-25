@@ -127,26 +127,26 @@
             (loop for c in (sort (alexandria:hash-table-values
                                   (chars f))
                                  '<
-                                 :key (lambda (a) (getf a :id)))
+                                 :key (lambda (c) (char-id c)))
                   do (cxml:with-element "char"
                        (cxml:attribute "id" (char-id c))
                        ;; non-standard
-                       (cxml:attribute "index" (getf c :index))
+                       (cxml:attribute "index" (glyph-index c))
                        ;; non-standard
-                       (cxml:attribute "char" (when (getf c :char)
-                                                (string (getf c :char))))
-                       (cxml:attribute "width" (f (getf c :width)))
-                       (cxml:attribute "height" (f (getf c :height)))
-                       (cxml:attribute "xoffset" (f (getf c :xoffset)))
-                       (cxml:attribute "yoffset" (f (getf c :yoffset)))
-                       (cxml:attribute "xadvance" (f (getf c :xadvance)))
-                       (cxml:attribute "chnl" (getf c :chnl))
-                       (cxml:attribute "x" (f (getf c :x)))
-                       (cxml:attribute "y" (f (getf c :y)))
-                       (cxml:attribute "page" (getf c :page))
+                       (cxml:attribute "char" (when (glyph-char c)
+                                                (string (glyph-char c))))
+                       (cxml:attribute "width" (f (glyph-width c)))
+                       (cxml:attribute "height" (f (glyph-height c)))
+                       (cxml:attribute "xoffset" (f (glyph-xoffset c)))
+                       (cxml:attribute "yoffset" (f (glyph-yoffset c)))
+                       (cxml:attribute "xadvance" (f (glyph-xadvance c)))
+                       (cxml:attribute "chnl" (glyph-chnl c))
+                       (cxml:attribute "x" (f (glyph-x c)))
+                       (cxml:attribute "y" (f (glyph-y c)))
+                       (cxml:attribute "page" (glyph-page c))
                        ;; non-standard
-                       (cxml:attribute "letter" (when (getf c :letter)
-                                                  (string (getf c :letter)))))))
+                       (cxml:attribute "letter" (when (glyph-letter c)
+                                                  (string (glyph-letter c)))))))
           (cxml:with-element "kernings"
             (cxml:attribute "count" (hash-table-count (kernings f)))
             (flet ((id (x)
