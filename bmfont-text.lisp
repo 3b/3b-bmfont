@@ -164,15 +164,15 @@
       (flet ((id (x)
                (char-id (gethash x (chars f)) x)))
         (loop
-          for ((c1 . c2) . a) in (sort (alexandria:hash-table-alist
-                                        (kernings f))
-                                       (lambda (a b)
-                                         (if (= (id (caar a))
-                                                (id (caar b)))
-                                             (< (id (cdar a))
-                                                (id (cdar b)))
-                                             (< (id (caar a))
-                                                (id (caar b))))))
+          for (kidx . a) in (sort (alexandria:hash-table-alist
+                                   (kernings f))
+                                  (lambda (a b)
+                                    (destructuring-bind (a1 . a2) (kerning-index-characters (car a))
+                                      (destructuring-bind (b1 . b2) (kerning-index-characters (car b))
+                                        (if (= (id a1) (id b1))
+                                            (< (id a2) (id b2))
+                                            (< (id a1) (id a2)))))))
+          for (c1 . c2) = (kerning-index-characters kidx)
           do (format stream "kerning first=~a second=~a amount=~a~%"
                      (id c1)
                      (id c2)

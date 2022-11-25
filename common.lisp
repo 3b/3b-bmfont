@@ -45,7 +45,7 @@
    ;; data arrays/hashes
    (pages :accessor pages :initarg :pages)
    (kernings :accessor kernings :initarg :kernings
-             :initform (make-hash-table :test 'equal))
+             :initform (make-hash-table :test 'eql))
    ;; extension to bmfont spec from msdf-bmfont-xml
    (distance-field :accessor distance-field :initarg :distance-field)))
 
@@ -73,6 +73,29 @@
       (if (minusp (glyph-id c))
           :invalid
           (code-char (glyph-id c)))))
+
+(declaim (inline kerning-index))
+(declaim (ftype (function (character character) (unsigned-byte 42)) kerning-index))
+(defun kerning-index (lhs rhs)
+  (ldb (byte 42 0) (+ (char-code lhs) (ash (char-code rhs) 21))))
+
+(defun kerning-index-characters (idx)
+  (cons (code-char (ldb (byte 21 0) idx))
+        (code-char (ldb (byte 21 21) idx))))
+
+(declaim (inline %kerning))
+(declaim (ftype (function (hash-table character character) single-float) %kerning))
+(defun %kerning (table lhs rhs)
+  (gethash (kerning-index lhs rhs) table 0f0))
+
+(defun (setf %kerning) (value table lhs rhs)
+  (setf (gethash (ldb (byte 42 0) (+ (char-code lhs) (ash (char-code rhs) 21))) table) (float value 0f0)))
+
+(defun kerning (font lhs rhs)
+  (%kerning (kernings font) lhs rhs))
+
+(defun (setf kerning) (value font lhs rhs)
+  (setf (%kerning (kernings font) lhs rhs) value))
 
 (defun make-chars-hash (info chars)
   (unless (or (getf info :unicode)
@@ -107,17 +130,15 @@
     ;; fonts to look at
     (error "only unicode and us-ascii supported currently."))
   (let ((id-hash (make-hash-table))
-        (h (make-hash-table :test 'equal)))
+        (h (make-hash-table :test 'eql)))
     (loop for c being the hash-values of chars
           for id = (glyph-id c)
           do (setf (gethash id id-hash) (remap-char c)))
     (loop for k across kernings
           for c1 = (getf k :first)
           for c2 = (getf k :second)
-          for key = (cons (gethash c1 id-hash)
-                          (gethash c2 id-hash))
           unless (gethash c2 id-hash) do (break "???")
-            do (setf (gethash key h) (getf k :amount)))
+            do (setf (%kerning h c1 c2) (getf k :amount)))
     h))
 
 (defun make-keyword (x)

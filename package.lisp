@@ -42,6 +42,10 @@
    #:red-chnl
    #:green-chnl
    #:blue-chnl
+   #:kerning-index
+   #:kerning-index-characters
+   #:%kerning
+   #:kerning
    #:remap-char
    #:make-chars-hash
    #:make-kerning-hash
@@ -118,5 +122,7 @@
            #:red-chnl
            #:green-chnl
            #:blue-chnl
+           #:kerning
+           #:kerning-index
            #:map-glyphs
            #:measure-glyphs))

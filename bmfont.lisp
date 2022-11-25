@@ -108,11 +108,12 @@
         with x = x
         with line = (line-height font)
         with space = (space-size font)
+        with kernings = (kernings font)
         for p = nil then c
         for i from (or start 0) below (or end (length string))
         for c = (aref string i)
         for char = (char-data c font)
-        for k = (gethash (cons p c) (kernings font) 0)
+        for k = (%kerning kernings p c)
         for (dx dy) = (if model-y-up
                           (glyph-origin-y-up char)
                           (glyhp-origin char))
@@ -154,11 +155,12 @@
         with x = 0
         with line = (line-height font)
         with space = (space-size font)
+        with kernings = (kernings font)
         for p = nil then c
         for i from (or start 0) below (or end (length string))
         for c = (aref string i)
         for char = (char-data c font)
-        for k = (gethash (cons p c) (kernings font) 0)
+        for k = (%kerning kernings p c)
         do (case c
              (#\newline
               (setf x 0)
