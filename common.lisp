@@ -11,8 +11,10 @@
   (xadvance 0 :type (unsigned-byte 32))
   (page 0 :type (unsigned-byte 16))
   (chnl 0 :type (unsigned-byte 32))
-  (char NIL)
-  (letter NIL))
+  (char NIL :type (or null string))
+  (letter NIL :type (or null string))
+  (origin () :type list)
+  (origin-y-up () :type list))
 
 (defmethod make-load-form ((glyph glyph) &optional env)
   (make-load-form-saving-slots glyph :environment env))
@@ -66,21 +68,23 @@
         ;; possibly should store as string to allow for ligatures?
         (assert (= 1 (length (glyph-letter c))))
         (char (glyph-letter c) 0))
-      (when (glyph-letter c)
-        (assert (= 1 (length (glyph-letter c))))
-        (char (glyph-letter c) 0))
+      (when (glyph-char c)
+        (assert (= 1 (length (glyph-char c))))
+        (char (glyph-char c) 0))
       ;; bmfont uses -1 for "missing character" glyph
       (if (minusp (glyph-id c))
           :invalid
           (code-char (glyph-id c)))))
 
 (declaim (inline kerning-index))
-(declaim (ftype (function ((or character fixnum) (or character fixnum)) (unsigned-byte 42)) kerning-index))
+(declaim (ftype (function (T T) (unsigned-byte 42)) kerning-index))
 (defun kerning-index (lhs rhs)
   (let ((lhs (etypecase lhs
+               (null 0)
                (character (char-code lhs))
                (fixnum lhs)))
         (rhs (etypecase rhs
+               (null 0)
                (character (char-code rhs))
                (fixnum rhs))))
     (ldb (byte 42 0) (+ lhs (ash rhs 21)))))

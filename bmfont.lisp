@@ -116,7 +116,7 @@
         for k = (%kerning kernings p c)
         for (dx dy) = (if model-y-up
                           (glyph-origin-y-up char)
-                          (glyhp-origin char))
+                          (glyph-origin char))
         do (case c
              (#\newline
               (setf x 0)
@@ -131,7 +131,7 @@
               (let* ((x- (+ x dx))
                      (y- (+ y dy))
                      (cw (glyph-width char))
-                     (ch (glyph-width char))
+                     (ch (glyph-height char))
                      (x+ (+ x- cw))
                      (y+ (if model-y-up
                              (- y- ch)

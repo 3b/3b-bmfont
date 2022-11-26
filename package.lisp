@@ -14,6 +14,8 @@
    #:glyph-chnl
    #:glyph-char
    #:glyph-letter
+   #:glyph-origin
+   #:glyph-origin-y-up
    #:make-glyph
    #:bmfont
    #:info
@@ -91,6 +93,8 @@
            #:glyph-chnl
            #:glyph-char
            #:glyph-letter
+           #:glyph-origin
+           #:glyph-origin-y-up
            #:bmfont
            #:info
            #:common
