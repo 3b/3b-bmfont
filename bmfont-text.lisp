@@ -39,11 +39,18 @@
   (let ((s 0)
         (white-space #(#\space #\tab #\newline #\return #\linefeed)))
     (labels ((until (chars)
-               (loop with s1 = s
-                     for i from s below (length line)
-                     until (position (aref line i) chars)
-                     finally (setf s (1+ i))
-                             (return (subseq line s1 (1- s)))))
+               (coerce
+                (loop with s1 = s
+                      with escape = nil
+                      for i from s below (length line)
+                      for c = (aref line i)
+                      until (and (not escape)
+                                 (position c chars))
+                      do (setf escape (and (not escape) (eql c #\\)))
+                      unless escape
+                        collect c
+                      finally (setf s (1+ i)))
+                'string))
              (skip-white ()
                (loop while (and (array-in-bounds-p line s)
                                 (position (char line s) white-space))
@@ -67,7 +74,8 @@
 (defun read-bmfont-text (stream)
   (let ((*font* (list :info nil :commmon nil :pages nil :chars nil :kerning nil :distance-field nil)))
     (loop for line = (read-line stream nil nil)
-          for tokens = (when line (tokenize-line line))
+          for tokens = (when (and line (not (alexandria:emptyp line)))
+                         (tokenize-line line))
           while line
           do (add-line (first tokens) (rest tokens)))
     (let* ((info (getf *font* :info))
@@ -85,14 +93,31 @@
       f)))
 
 (defun write-bmfont-text (f stream)
-  (let ((ac #(:glyph :outline :glyph+outline :zero :one)))
+  (let ((ac #(:glyph :outline :glyph+outline :zero :one))
+        (round nil))
     (flet ((b (x)
              (if x 1 0))
            (f (x)
-             (if (and (rationalp x)
-                      (not (integerp x)))
-                 (float x)
-                 x)))
+             (cond
+               ((integerp x)
+                x)
+               (round
+                (round x))
+               (t
+                (with-simple-restart (continue
+                                      "Round non-integral values")
+                  (error "float values not supported in text and xml"))
+                (setf round t)
+                (round x))))
+           (escape (s)
+             (let ((escapes '(#\" #\\)))
+               (when (position-if (alexandria:rcurry #'member escapes) s)
+                 (coerce
+                  (loop for i across s
+                        when (member i escapes)
+                          collect #\\
+                        collect i)
+                  'string)))))
       (format stream
               "info face=~s size=~a bold=~a italic=~a charset=~s unicode=~a ~
               stretchH=~a smooth=~a aa=~a padding=~{~a~^,~} spacing=~{~a~^,~}~%"
@@ -150,7 +175,7 @@
                    ;; non-standard
                    (glyph-index c)
                    ;; non-standard
-                   (glyph-char c)
+                   (escape (glyph-char c))
                    (f (glyph-width c))
                    (f (glyph-height c))
                    (f (glyph-xoffset c))
@@ -159,7 +184,7 @@
                    (glyph-page c)
                    (glyph-chnl c)
                    ;; non-standard
-                   (glyph-letter c)))
+                   (escape (glyph-letter c))))
       (format stream "kernings count=~a~%" (hash-table-count (kernings f)))
       (flet ((id (x)
                (char-id (gethash x (chars f)) x)))
@@ -176,7 +201,7 @@
           do (format stream "kerning first=~a second=~a amount=~a~%"
                      (id c1)
                      (id c2)
-                     a))))))
+                     (f a)))))))
 
 #++
 (with-open-file (s2 "/tmp/r2.fnt" :direction :output

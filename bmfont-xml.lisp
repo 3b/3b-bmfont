@@ -65,17 +65,25 @@
       (f b))))
 
 (defun write-bmfont-xml (f stream)
-  (let ((ac #(:glyph :outline :glyph+outline :zero :one)))
+  (let ((ac #(:glyph :outline :glyph+outline :zero :one))
+        (round nil))
     (cxml:with-xml-output (cxml:make-octet-stream-sink stream
                                                        :indentation 4
                                                        :canonical nil)
       (flet ((b (x)
                (if x 1 0))
              (f (x)
-               (if (and (rationalp x)
-                        (not (integerp x)))
-                   (float x)
-                   x)))
+               (cond
+                 ((integerp x)
+                  x)
+                 (round
+                  (round x))
+                 (t
+                  (with-simple-restart (continue
+                                        "Round non-integral values")
+                    (error "float values not supported in text and xml"))
+                  (setf round t)
+                  (round x)))))
         (cxml:with-element "font"
           (cxml:with-element "info"
             (cxml:attribute "face" (face f))
@@ -164,7 +172,7 @@
                 do (cxml:with-element "kerning"
                      (cxml:attribute "first" (id c1))
                      (cxml:attribute "second" (id c2))
-                     (cxml:attribute "amount" a))))))))))
+                     (cxml:attribute "amount" (f a)))))))))))
 
 #++
 (with-open-file (s2 "/tmp/r2.fnt" :direction :output
