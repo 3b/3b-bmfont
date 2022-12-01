@@ -162,12 +162,7 @@
               (loop
                 for (kidx . a) in (sort (alexandria:hash-table-alist
                                          (kernings f))
-                                        (lambda (a b)
-                                          (destructuring-bind (a1 . a2) (kerning-index-characters (car a))
-                                            (destructuring-bind (b1 . b2) (kerning-index-characters (car b))
-                                              (if (= (id a1) (id b1))
-                                                  (< (id a2) (id b2))
-                                                  (< (id a1) (id a2)))))))
+                                         '< :key 'car)
                 for (c1 . c2) = (kerning-index-characters kidx)
                 do (cxml:with-element "kerning"
                      (cxml:attribute "first" (id c1))
