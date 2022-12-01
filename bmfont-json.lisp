@@ -158,19 +158,13 @@
          (flet ((id (x)
                   (char-id (gethash x (chars f)) x)))
            (loop
-             for (kidx . a) in (sort (alexandria:hash-table-alist
-                                      (kernings f))
-                                     (lambda (a b)
-                                       (destructuring-bind (a1 . a2) (kerning-index-characters (car a))
-                                         (destructuring-bind (b1 . b2) (kerning-index-characters (car b))
-                                           (if (= (id a1) (id b1))
-                                               (< (id a2) (id b2))
-                                               (< (id a1) (id a2)))))))
+             for (kidx . a) in (sort (alexandria:hash-table-alist (kernings f))
+                                     '< :key 'car)
              for (c1 . c2) = (kerning-index-characters kidx)
-             do (jsown:new-js
-                  ("first"(id c1))
-                  ("second"(id c2))
-                  ("amount" a))))))
+             collect (jsown:new-js
+                       ("first"(id c1))
+                       ("second"(id c2))
+                       ("amount" a))))))
       (when (distance-field f)
         (jsown:extend-js
             json

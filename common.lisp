@@ -13,6 +13,7 @@
   (chnl 0 :type (unsigned-byte 32))
   (char NIL :type (or null string))
   (letter NIL :type (or null string))
+  (index NIL :type (or null (unsigned-byte 32)))
   (origin () :type list)
   (origin-y-up () :type list))
 
@@ -87,11 +88,11 @@
                (null 0)
                (character (char-code rhs))
                (fixnum rhs))))
-    (ldb (byte 42 0) (+ lhs (ash rhs 21)))))
+    (ldb (byte 42 0) (+ (ash lhs 21) rhs))))
 
 (defun kerning-index-characters (idx)
-  (cons (code-char (ldb (byte 21 0) idx))
-        (code-char (ldb (byte 21 21) idx))))
+  (cons (code-char (ldb (byte 21 21) idx))
+        (code-char (ldb (byte 21 0) idx))))
 
 (declaim (inline %kerning))
 (declaim (ftype (function (hash-table T T) single-float) %kerning))

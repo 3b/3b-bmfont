@@ -14,6 +14,7 @@
    #:glyph-chnl
    #:glyph-char
    #:glyph-letter
+   #:glyph-index
    #:glyph-origin
    #:glyph-origin-y-up
    #:make-glyph
