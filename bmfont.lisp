@@ -20,8 +20,8 @@
           unless (glyph-origin v)
             do (let ((x (glyph-xoffset v))
                      (y (glyph-yoffset v)))
-                 (setf (glyph-origin v) (list x (- y down base)))
-                 (setf (glyph-origin-y-up v) (list x (- base (- y down)))))))
+                 (setf (glyph-origin v) (v2 x (- y down base)))
+                 (setf (glyph-origin-y-up v) (v2 x (- base (- y down)))))))
   font)
 
 (defun read-bmfont (filename)
@@ -98,82 +98,106 @@
     (or (gethash char chars)
         (gethash :invalid chars)
         (gethash (code-char #xFFFD) chars)
-        (load-time-value (make-glyph)))))
+        (load-time-value (make-glyph :origin (v2 0 0) :origin-y-up (v2 0 0))))))
 
 (defun map-glyphs (font function string &key model-y-up texture-y-up start end
                                           extra-space (x 0) (y 0))
-  (loop with sw = (float (scale-w font))
-        with sh = (float (scale-h font))
-        with y = y
-        with x = x
-        with line = (line-height font)
-        with space = (space-size font)
-        with kernings = (kernings font)
-        for p = nil then c
-        for i from (or start 0) below (or end (length string))
-        for c = (aref string i)
-        for char = (char-data c font)
-        for k = (%kerning kernings p c)
-        for (dx dy) = (if model-y-up
-                          (glyph-origin-y-up char)
-                          (glyph-origin char))
-        do (case c
-             (#\newline
-              (setf x 0)
-              (incf y (if model-y-up (- line) line)))
-             (#\space
-              (incf x space))
-             (#\tab
-              ;; todo: make this configurable, add tab stop option?
-              (incf x (* 8 space)))
-             (t
-              (incf x k)
-              (let* ((x- (+ x dx))
-                     (y- (+ y dy))
-                     (cw (glyph-width char))
-                     (ch (glyph-height char))
-                     (x+ (+ x- cw))
-                     (y+ (if model-y-up
-                             (- y- ch)
-                             (+ y- ch)))
-                     (cx (glyph-x char))
-                     (cy (glyph-y char))
-                     (u- (/ cx sw))
-                     (v- (/ cy sh))
-                     (u+ (/ (+ cx cw) sw))
-                     (v+ (/ (+ cy ch) sh)))
-                (when texture-y-up
-                  (psetf v- (- 1 v-)
-                         v+ (- 1 v+)))
-                (funcall function x- y- x+ y+ u- v- u+ v+))
-              (incf x (glyph-xadvance char))
-              (when extra-space (incf x extra-space))))
-        finally (return (values x y))))
+  (declare (optimize speed)
+           (type string string))
+  (macrolet ((q (&body body)
+               ;; don't try to optimize things known to need the slow
+               ;; path
+               `(locally (declare (optimize (speed 1)))
+                  ,@body)))
+    (flet ((f (x)
+             (q (float x 1f0))))
+      (declare (inline f))
+      (loop with sw = (f (scale-w font))
+            with sh = (f (scale-h font))
+            with y single-float = (f y)
+            with x single-float = (f x)
+            with line = (f (line-height font))
+            with space = (f (space-size font))
+            with kernings = (kernings font)
+            with function function = (coerce function 'function)
+            with extra-space = (when extra-space (f extra-space))
+            with start fixnum = (or start 0)
+            with end fixnum = (or end (length string))
+            for p = nil then c
+            for i from start below end
+            for c = (q (aref string i))
+            for char = (char-data c font)
+            for k = (%kerning kernings p c)
+            for dxy of-type v2 = (if model-y-up
+                                     (glyph-origin-y-up char)
+                                     (glyph-origin char))
+            for dx = (aref dxy 0) for dy = (aref dxy 1)
+            do (case c
+                 (#\newline
+                  (setf x 0f0)
+                  (incf y (if model-y-up (- line) line)))
+                 (#\space
+                  (incf x space))
+                 (#\tab
+                  ;; todo: make this configurable, add tab stop option?
+                  (incf x (* 8 space)))
+                 (t
+                  (incf x k)
+                  (let* ((x- (+ x dx))
+                         (y- (+ y dy))
+                         (cw (glyph-width char))
+                         (ch (glyph-height char))
+                         (x+ (+ x- cw))
+                         (y+ (if model-y-up
+                                 (- y- ch)
+                                 (+ y- ch)))
+                         (cx (glyph-x char))
+                         (cy (glyph-y char))
+                         (u- (/ cx sw))
+                         (v- (/ cy sh))
+                         (u+ (/ (+ cx cw) sw))
+                         (v+ (/ (+ cy ch) sh)))
+                    (when texture-y-up
+                      (psetf v- (- 1 v-)
+                             v+ (- 1 v+)))
+                    (funcall function x- y- x+ y+ u- v- u+ v+))
+                  (incf x (glyph-xadvance char))
+                  (when extra-space (incf x extra-space))))
+            finally (return (values x y))))))
 
 (defun measure-glyphs (font string &key start end)
-  (loop with y = 0
-        with x = 0
-        with line = (line-height font)
-        with space = (space-size font)
-        with kernings = (kernings font)
-        for p = nil then c
-        for i from (or start 0) below (or end (length string))
-        for c = (aref string i)
-        for char = (char-data c font)
-        for k = (%kerning kernings p c)
-        do (case c
-             (#\newline
-              (setf x 0)
-              (incf y line))
-             (#\space
-              (incf x space))
-             (#\tab
-              ;; todo: make this configurable, add tab stop option?
-              (incf x (* 8 space)))
-             (t
-              (incf x k)
-              (incf x (glyph-xadvance char))))
-        finally (return (values x (+ y (base font))))))
+  (declare (optimize speed) (type string string))
+  (macrolet ((q (&body body)
+               ;; don't try to optimize things known to need the slow
+               ;; path
+               `(locally (declare (optimize (speed 1)))
+                  ,@body)))
+    (loop with y single-float = 0f0
+          with x single-float = 0f0
+          with line = (q (float (line-height font) 0f0))
+          with space = (q (float (space-size font) 0f0))
+          with kernings = (kernings font)
+          with base = (q (float (base font) 0f0))
+          with start fixnum = (or start 0)
+          with end fixnum = (q (or end (length string)))
+          for p = nil then c
+          for i from start below end
+          for c = (q (aref string i))
+          for char = (char-data c font)
+          for k = (%kerning kernings p c)
+          do (case c
+               (#\newline
+                (setf x 0f0)
+                (incf y line))
+               (#\space
+                (incf x space))
+               (#\tab
+                ;; todo: make this configurable, add tab stop option?
+                (incf x (* 8 space)))
+               (t
+                (incf x k)
+                (incf x (glyph-xadvance char))))
+          finally (return (values x (+ y base))))))
 
 #++
 (ql:quickload '3b-bmfont/xml)

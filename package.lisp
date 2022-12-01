@@ -59,7 +59,9 @@
    #:padding-up
    #:padding-right
    #:padding-down
-   #:padding-left))
+   #:padding-left
+   #:v2
+   ))
 
 ;; fixme: move these to separate files?
 (defpackage #:3b-bmfont-xml

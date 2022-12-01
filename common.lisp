@@ -1,5 +1,11 @@
 (in-package :3b-bmfont-common)
 
+(deftype v2 () '(simple-array single-float (2)))
+(declaim (inline v2))
+(defun v2 (x y)
+  (make-array 2 :element-type 'single-float
+                :initial-contents (list (coerce x 'single-float)
+                                        (coerce y 'single-float))))
 (defstruct glyph
   (id 0 :type (signed-byte 32))
   (x 0 :type (unsigned-byte 32))
@@ -14,8 +20,8 @@
   (char NIL :type (or null string))
   (letter NIL :type (or null string))
   (index NIL :type (or null (unsigned-byte 32)))
-  (origin () :type list)
-  (origin-y-up () :type list))
+  (origin NIL :type (or null v2))
+  (origin-y-up NIL :type (or null v2)))
 
 (defmethod make-load-form ((glyph glyph) &optional env)
   (make-load-form-saving-slots glyph :environment env))
