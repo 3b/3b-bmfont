@@ -111,13 +111,14 @@
                 (round x))))
            (escape (s)
              (let ((escapes '(#\" #\\)))
-               (when (position-if (alexandria:rcurry #'member escapes) s)
-                 (coerce
-                  (loop for i across s
-                        when (member i escapes)
-                          collect #\\
-                        collect i)
-                  'string)))))
+               (if (position-if (alexandria:rcurry #'member escapes) s)
+                   (coerce
+                    (loop for i across s
+                          when (member i escapes)
+                            collect #\\
+                          collect i)
+                    'string)
+                   s))))
       (format stream
               "info face=~s size=~a bold=~a italic=~a charset=~s unicode=~a ~
               stretchH=~a smooth=~a aa=~a padding=~{~a~^,~} spacing=~{~a~^,~}~%"
