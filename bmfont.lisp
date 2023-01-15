@@ -16,19 +16,19 @@
          (let ((rf (fs '#:read-bmfont-xml '#:3b-bmfont-xml)))
            (if rf
                (funcall rf f)
-               (error "can't read font metadata from ~s, xml backend not loaded"
+               (error "can't read font metadata from ~s,~%xml backend not loaded"
                       filename))))
         (#\{
          (let ((rf (fs '#:read-bmfont-json '#:3b-bmfont-json)))
            (if rf
                (funcall rf f)
-               (error "can't read font metadata from ~s, json backend not loaded"
+               (error "can't read font metadata from ~s,~%json backend not loaded"
                       filename))))
         (#\i
          (let ((rf (fs '#:read-bmfont-text '#:3b-bmfont-text)))
            (if rf
                (funcall rf f)
-               (error "can't read font metadata from ~s, text backend not loaded"
+               (error "can't read font metadata from ~s,~%text backend not loaded"
                       filename))))
         (#\B
          (error "binary bmfont metadata format not implemented yet"))
