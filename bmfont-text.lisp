@@ -44,15 +44,14 @@
         (white-space #(#\space #\tab #\newline #\return #\linefeed)))
     (labels ((until (chars)
                (coerce
-                (loop with s1 = s
-                      with escape = nil
-                      for i from s below (length line)
+                (loop for i from s below (length line)
                       for c = (aref line i)
-                      until (and (not escape)
-                                 (position c chars))
-                      do (setf escape (and (not escape) (eql c #\\)))
-                      unless escape
-                        collect c
+                      until (and (position c chars)
+                                 ;; char/letter store " as """ so try
+                                 ;; to handle that correctly
+                                 (or (not (array-in-bounds-p line (1+ i)))
+                                     (char/= c (aref line (1+ i)))))
+                      collect c
                       finally (setf s (1+ i)))
                 'string))
              (skip-white ()
@@ -112,17 +111,7 @@
                                       "Round non-integral values")
                   (error "float values not supported in text and xml"))
                 (setf round t)
-                (round x))))
-           (escape (s)
-             (let ((escapes '(#\" #\\)))
-               (if (position-if (alexandria:rcurry #'member escapes) s)
-                   (coerce
-                    (loop for i across s
-                          when (member i escapes)
-                            collect #\\
-                          collect i)
-                    'string)
-                   s))))
+                (round x)))))
       (format stream
               "info face=~s size=~a bold=~a italic=~a charset=~s unicode=~a ~
               stretchH=~a smooth=~a aa=~a padding=~{~a~^,~} spacing=~{~a~^,~}~%"
@@ -180,7 +169,7 @@
                    ;; non-standard
                    (glyph-index c)
                    ;; non-standard
-                   (escape (glyph-char c))
+                   (glyph-char c)
                    (f (glyph-width c))
                    (f (glyph-height c))
                    (f (glyph-xoffset c))
@@ -189,7 +178,7 @@
                    (glyph-page c)
                    (glyph-chnl c)
                    ;; non-standard
-                   (escape (glyph-letter c))))
+                   (glyph-letter c)))
       (format stream "kernings count=~a~%" (hash-table-count (kernings f)))
       (flet ((id (x)
                (char-id (gethash x (chars f)) x)))
