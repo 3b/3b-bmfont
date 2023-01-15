@@ -61,7 +61,9 @@
    #:padding-down
    #:padding-left
    #:v2
-   #:update-font-properties))
+   #:update-font-properties
+   #:space-size
+   #:invalid-glyph))
 
 ;; main API package
 (defpackage #:3b-bmfont
