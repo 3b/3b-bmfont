@@ -62,7 +62,7 @@
        stream
        b
        :entity-resolver #'resolver)
-      (f b))))
+      (update-font-properties (f b)))))
 
 (defun write-bmfont-xml (f stream)
   (let ((ac #(:glyph :outline :glyph+outline :zero :one))

@@ -51,12 +51,53 @@
    (green-chnl :accessor green-chnl :initform :glyph :initarg :green-chnl)
    (blue-chnl :accessor blue-chnl :initform :glyph :initarg :blue-chnl)
    (chars :accessor chars :initarg :chars)
+   ;; some additional properties cached on creation
+   (space-size :accessor space-size)
+   (invalid-glyph :accessor invalid-glyph)
    ;; data arrays/hashes
    (pages :accessor pages :initarg :pages)
    (kernings :accessor kernings :initarg :kernings
              :initform (make-hash-table :test 'eql))
    ;; extension to bmfont spec from msdf-bmfont-xml
    (distance-field :accessor distance-field :initarg :distance-field)))
+
+(defun calculate-space-size (font)
+  (let ((glyph (or (gethash #\space (chars font))
+                   (gethash #\n (chars font)))))
+    (if glyph
+        (glyph-xadvance glyph)
+        (/ (loop for c in (alexandria:hash-table-values
+                           (chars font))
+                 sum (or (glyph-xadvance c) 0))
+           (float (hash-table-count (chars font)))))))
+
+(defun find-invalid-glyph (font)
+  (let ((chars (chars font)))
+    (or (gethash :invalid chars)
+        (gethash (code-char #xFFFD) chars)
+        (load-time-value (make-glyph :origin (v2 0 0) :origin-y-up (v2 0 0))))))
+
+(defun add-origins (font)
+  ;; pre-calculate offsets to move glyph to baseline, accounting for
+  ;; padding and Y-Axis direction
+  (when font
+    (loop with (nil nil down nil) = (padding font) ;; up right down left
+          with chars = (chars font)
+          with base = (base font)
+          for c being the hash-keys of chars
+            using (hash-value v)
+          unless (glyph-origin v)
+            do (let ((x (glyph-xoffset v))
+                     (y (glyph-yoffset v)))
+                 (setf (glyph-origin v) (v2 x (- y down base)))
+                 (setf (glyph-origin-y-up v) (v2 x (- base (- y down)))))))
+  font)
+
+(defun update-font-properties (font)
+  (setf (space-size font) (calculate-space-size font))
+  (setf (invalid-glyph font) (find-invalid-glyph font))
+  (add-origins font)
+  font)
 
 (defmethod padding-up ((f bmfont))
   (first (padding f)))

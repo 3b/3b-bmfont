@@ -61,7 +61,7 @@
    #:padding-down
    #:padding-left
    #:v2
-   ))
+   #:update-font-properties))
 
 ;; fixme: move these to separate files?
 (defpackage #:3b-bmfont-xml
@@ -132,4 +132,8 @@
            #:kerning
            #:kerning-index
            #:map-glyphs
-           #:measure-glyphs))
+           #:measure-glyphs
+           #:space-size
+           #:char-data
+           #:%kerning
+           #:v2))

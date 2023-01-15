@@ -83,7 +83,7 @@
       (setf (kernings f)
             (make-kerning-hash info (chars f)
                                (getf *font* :kernings)))
-      f)))
+      (update-font-properties f))))
 
 (defun write-bmfont-json (f stream)
   (let ((ac #(:glyph :outline :glyph+outline :zero :one))
