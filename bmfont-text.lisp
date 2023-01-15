@@ -92,7 +92,7 @@
       (setf (distance-field f) (getf *font* :distance-field))
       (setf (kernings f)
             (make-kerning-hash info (chars f)
-                               (getf *font* :kernings)))
+                               (or (getf *font* :kernings) #())))
       (update-font-properties f))))
 
 (defun write-bmfont-text (f stream)
