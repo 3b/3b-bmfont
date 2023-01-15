@@ -66,10 +66,10 @@
                                      :if-exists :supersede)
            (funcall wf font f)))))))
 
-(defun char-data (char font)
+(defun char-data (char font &key (default (invalid-glyph font)))
   (let ((chars (chars font)))
     (or (gethash char chars)
-        (invalid-glyph font))))
+        default)))
 
 (defun map-glyphs (font function string &key model-y-up texture-y-up start end
                                           extra-space (x 0) (y 0))
