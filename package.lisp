@@ -63,21 +63,6 @@
    #:v2
    #:update-font-properties))
 
-;; fixme: move these to separate files?
-(defpackage #:3b-bmfont-xml
-  (:use :cl #:3b-bmfont-common)
-  (:export #:read-bmfont-xml #:write-bmfont-xml))
-
-(defpackage #:3b-bmfont-text
-  (:use :cl #:3b-bmfont-common)
-  (:export #:read-bmfont-text #:write-bmfont-text))
-
-(defpackage #:3b-bmfont-json
-  (:use :cl #:3b-bmfont-common)
-  (:export #:read-bmfont-json #:write-bmfont-json))
-
-
-
 ;; main API package
 (defpackage #:3b-bmfont
   (:use :cl #:3b-bmfont-common)

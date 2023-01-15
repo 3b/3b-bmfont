@@ -1,4 +1,8 @@
-(in-package :3b-bmfont-xml)
+(in-package #:cl-user)
+(defpackage #:3b-bmfont-xml
+  (:use :cl #:3b-bmfont-common)
+  (:export #:read-bmfont-xml #:write-bmfont-xml))
+(in-package #:3b-bmfont-xml)
 
 ;;; writer/translator for bmfont xml format
 #++

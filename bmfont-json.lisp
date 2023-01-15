@@ -1,4 +1,8 @@
-(in-package :3b-bmfont-json)
+(in-package #:cl-user)
+(defpackage #:3b-bmfont-json
+  (:use :cl #:3b-bmfont-common)
+  (:export #:read-bmfont-json #:write-bmfont-json))
+(in-package #:3b-bmfont-json)
 
 #++(ql:quickload '3b-bmfont/json)
 (defvar *font*)
