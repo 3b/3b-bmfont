@@ -8,13 +8,13 @@
                                         (coerce y 'single-float))))
 (defstruct glyph
   (id 0 :type (signed-byte 32))
-  (x 0 :type (unsigned-byte 32))
-  (y 0 :type (unsigned-byte 32))
-  (width 0 :type (unsigned-byte 32))
-  (height 0 :type (unsigned-byte 32))
-  (xoffset 0.0 :type single-float)
-  (yoffset 0.0 :type single-float)
-  (xadvance 0 :type (unsigned-byte 32))
+  (x 0f0 :type single-float)
+  (y 0f0 :type single-float)
+  (width 0f0 :type single-float)
+  (height 0f0 :type single-float)
+  (xoffset 0f0 :type single-float)
+  (yoffset 0f0 :type single-float)
+  (xadvance 0f0 :type single-float)
   (page 0 :type (unsigned-byte 16))
   (chnl 0 :type (unsigned-byte 32))
   (char NIL :type (or null string))
@@ -36,7 +36,11 @@
    (charset :accessor charset :initarg :charset :initform "")
    (stretch-h :accessor stretch-h :initarg :stretch-h :initform 100)
    (smooth :accessor smooth :initform nil :initarg :smooth)
-   (aa :accessor aa :initarg :aa :initform nil)
+   ;; supersampling level used, 1 means no supersampling
+   (aa :accessor aa :initarg :aa :initform 1)
+   ;; if OUTLINE is non-zero, alpha contains an expanded version of
+   ;; glyph to use for drawing outlines
+   (outline :accessor outline :initarg :outline :initform 0)
    ;; padding =   (up, right, down, left)
    (padding :accessor padding :initform '(0 0 0 0) :initarg :padding)
    (spacing :accessor spacing :initarg :spacing :initform '(0 0))
@@ -60,6 +64,17 @@
              :initform (make-hash-table :test 'eql))
    ;; extension to bmfont spec from msdf-bmfont-xml
    (distance-field :accessor distance-field :initarg :distance-field)))
+
+(defmethod initialize-instance :after ((o bmfont) &key distance-range)
+  ;; some text format files store distance range in 'common', so fill
+  ;; distance-field slot from that
+  (when distance-range
+    (assert (not (slot-boundp o 'distance-field)))
+    (setf (distance-field o)
+          (list :distance-range distance-range
+                ;; no idea what type is correct here, but that
+                ;; particular font has alpha, so guess that
+                :field-type :msdf+a))))
 
 (defun calculate-space-size (font)
   (let ((glyph (or (gethash #\space (chars font))
@@ -219,6 +234,13 @@
 (defun int (x)
   (if (stringp x) (parse-integer x) x))
 
+(defun sfloat (x)
+  (when (stringp x)
+    (setf x (parse-number:parse-number x :float-format 'single-float)))
+  (if (floatp x)
+      x
+      (coerce x 'single-float)))
+
 (defun int-bool (x)
   (cond
     ((= (int x) 0) nil)
@@ -240,8 +262,13 @@
       (4 :one))))
 
 (defun char0 (x)
-  (assert (typep x '(string 1)))
-  (char x 0))
+  (etypecase x
+    ((string 1)
+     x)
+    (string
+     (cond
+       ((string-equal x "space") " ")
+       (t (error "unknown character name ~s?" x))))))
 
 (defvar *filters*
   '(:info (:size int
@@ -251,12 +278,12 @@
            :unicode int-bool
            :stretch-h int
            :smooth int-bool
-           :aa int-bool
+           :aa int
            :padding int-list
            :spacing int-list
            :outline int)
-    :common (:line-height int
-             :base int
+    :common (:line-height sfloat
+             :base sfloat
              :scale-w int
              :scale-h int
              :pages int
@@ -269,13 +296,13 @@
            ;;:file string
            )
     :char (:id int
-           :x int
-           :y int
-           :width int
-           :height int
-           :xoffset int
-           :yoffset int
-           :xadvance int
+           :x sfloat
+           :y sfloat
+           :width sfloat
+           :height sfloat
+           :xoffset sfloat
+           :yoffset sfloat
+           :xadvance sfloat
            :page int
            :chnl int
            :letter char0)

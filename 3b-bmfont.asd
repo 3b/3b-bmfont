@@ -6,7 +6,7 @@
   :license "MIT"
   ;; currently only load text backend by default, will use others
   ;; if loaded
-  :depends-on (3b-bmfont/text)
+  :depends-on (3b-bmfont/text parse-number)
   :components ((:file "package")
                (:file "bmfont")))
 
