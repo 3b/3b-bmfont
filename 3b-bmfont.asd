@@ -6,12 +6,12 @@
   :license "MIT"
   ;; currently only load text backend by default, will use others
   ;; if loaded
-  :depends-on (3b-bmfont/text parse-number)
+  :depends-on (3b-bmfont/text)
   :components ((:file "package")
                (:file "bmfont")))
 
 (defsystem 3b-bmfont/common
-  :depends-on (alexandria split-sequence)
+  :depends-on (alexandria split-sequence parse-number)
   :components ((:file "package")
                (:file "common")))
 
