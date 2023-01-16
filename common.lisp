@@ -6,7 +6,7 @@
   (make-array 2 :element-type 'single-float
                 :initial-contents (list (coerce x 'single-float)
                                         (coerce y 'single-float))))
-(defstruct glyph
+(defstruct (glyph (:constructor %make-glyph))
   (id 0 :type (signed-byte 32))
   (x 0f0 :type single-float)
   (y 0f0 :type single-float)
@@ -22,6 +22,21 @@
   (index NIL :type (or null (unsigned-byte 32)))
   (origin NIL :type (or null v2))
   (origin-y-up NIL :type (or null v2)))
+
+(defun make-glyph (&key (id 0) (x 0f0) (y 0f0)
+                     (width 0f0) (height 0f0) (xoffset 0f0) (yoffset 0f0)
+                     (xadvance 0f0) (page 0) (chnl 0)
+                     char letter index origin origin-y-up)
+  (flet ((f (x) (coerce x 'single-float)))
+    (declare (inline f))
+    (%make-glyph :id id :x (f x) :y (f y)
+                 :width (f width) :height (f height)
+                 :xoffset (f xoffset) :yoffset (f yoffset)
+                 :xadvance (f xadvance)
+                 :page page :chnl chnl
+                 :char char :letter letter
+                 :index index
+                 :origin origin :origin-y-up origin-y-up)))
 
 (defmethod make-load-form ((glyph glyph) &optional env)
   (make-load-form-saving-slots glyph :environment env))
