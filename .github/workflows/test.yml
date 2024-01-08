@@ -13,7 +13,7 @@ jobs:
         # ccl-bin,ccl32 get stuck in install
         # allegro,ecl fail to install but pass by running tests on sbcl
         # lisp: [sbcl-bin,ccl-bin/1.12,ccl32,allegro,ecl]
-        lisp: [sbcl-bin,ccl-bin/1.12,allegro]
+        lisp: [sbcl-bin,ccl-bin/1.12.2,allegro,ecl,clisp,ccl]
         os: [ubuntu-latest]
       fail-fast: false
     runs-on: ${{ matrix.os }}
