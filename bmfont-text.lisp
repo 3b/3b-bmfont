@@ -104,6 +104,8 @@
              (cond
                ((integerp x)
                 x)
+               ((= x (round x))
+                (round x))
                (round
                 (round x))
                (t
@@ -115,7 +117,7 @@
       (format stream
               "info face=~s size=~a bold=~a italic=~a charset=~s unicode=~a ~
               stretchH=~a smooth=~a aa=~a padding=~{~a~^,~} spacing=~{~a~^,~}~%"
-              (face f)
+              (or (face f) "")
               (f (size f))
               (b (bold f))
               (b (italic f))
@@ -124,8 +126,8 @@
               (f (stretch-h f))
               (b (smooth f))
               (b (aa f))
-              (padding f)
-              (spacing f))
+              (mapcar #'f (padding f))
+              (mapcar #'f (spacing f)))
       (format stream
               "common lineHeight=~a base=~a scaleW=~a scaleH=~a pages=~a ~
              packed=~a~@[ alphaChnl=~a~]~@[ redChnl=~a~]~@[ greenChnl=~a~]~
@@ -144,14 +146,14 @@
             for i from 0
             do (format stream "page id=~a file=~s~%"
                        (or (getf p :id) i)
-                       (getf p :file)))
+                       (or (getf p :file) "")))
       ;; non-standard extension
       ;; not sure if anyone uses this in text format?
       (when (distance-field f)
         (format stream "distanceField fieldType=~s distanceRange=~a~%"
                 (string-downcase
                  (getf (distance-field f) :field-type))
-                (getf (distance-field f) :distance-range)))
+                (f (getf (distance-field f) :distance-range))))
       (format stream "chars count=~a~%"
               (hash-table-count (chars f)))
       (loop
