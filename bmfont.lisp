@@ -51,20 +51,29 @@
          (with-open-file (f filename :direction :output
                                      :if-does-not-exist :create
                                      :if-exists :supersede)
-           (funcall wf font f))))
+           (if wf
+               (funcall wf font f)
+               (error "can't write font metadata to ~s,~%text backend not loaded"
+                      filename)))))
       (:xml
        (let ((wf (fs '#:write-bmfont-xml '#:3b-bmfont-xml)))
          (with-open-file (f filename :direction :output
                                      :if-does-not-exist :create
                                      :if-exists :supersede
                                      :element-type '(unsigned-byte 8))
-           (funcall wf font f))))
+           (if wf
+               (funcall wf font f)
+               (error "can't write font metadata to ~s,~%xml backend not loaded"
+                      filename)))))
       (:json
        (let ((wf (fs '#:write-bmfont-json '#:3b-bmfont-json)))
          (with-open-file (f filename :direction :output
                                      :if-does-not-exist :create
                                      :if-exists :supersede)
-           (funcall wf font f)))))))
+           (if wf
+               (funcall wf font f)
+               (error "can't write font metadata to ~s,~%json backend not loaded"
+                      filename))))))))
 
 (defun char-data (char font &key (default (invalid-glyph font)))
   (let ((chars (chars font)))
