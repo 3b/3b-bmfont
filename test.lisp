@@ -16,7 +16,7 @@
       (etypecase a
         (single-float
          (< (abs (- a b))
-            (* 2 single-float-epsilon a)))
+            (* 2 single-float-epsilon (abs a))))
         (sequence (every #'equal-enough a b)))))
 
 (defun compare-font (fnt ref &key round)
