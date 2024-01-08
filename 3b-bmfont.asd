@@ -43,6 +43,8 @@
   :components ((:file "test"))
   :perform (test-op (op c)
                     (declare (ignore op c))
-                    (or
-                     (symbol-call "PARACHUTE" "TEST"'#:3b-bmfont-test)
-                     (error "tests failed"))))
+                    (unless (eql :passed
+                                 (symbol-call "PARACHUTE" "STATUS"
+                                              (symbol-call "PARACHUTE" "TEST"
+                                                           '#:3b-bmfont-test))))
+                    (error "tests failed")))
