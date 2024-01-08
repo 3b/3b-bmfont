@@ -15,8 +15,15 @@
   (or (eql a b)
       (etypecase a
         (single-float
+         (format t "~s,~s: ~s ? ~s = ~s~%"
+                 a b (abs (- a b))
+                 ;; 1 ULP in 20.x is ~20 around 1.0, which we get when
+                 ;; calculating origins, so using 32 here
+                 (* 32 single-float-epsilon (max (abs a) (abs b)))
+                 (< (abs (- a b))
+                    (* 32 single-float-epsilon (max (abs a) (abs b)))))
          (< (abs (- a b))
-            (* 2 single-float-epsilon (abs a))))
+            (* 32 single-float-epsilon (max (abs a) (abs b)))))
         (sequence (every #'equal-enough a b)))))
 
 (defun compare-font (fnt ref &key round)
