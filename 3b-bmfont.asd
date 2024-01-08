@@ -8,7 +8,8 @@
   ;; if loaded
   :depends-on (3b-bmfont/text)
   :components ((:file "package")
-               (:file "bmfont")))
+               (:file "bmfont"))
+  :in-order-to ((test-op (test-op 3b-bmfont/tests))))
 
 (defsystem 3b-bmfont/common
   :depends-on (alexandria split-sequence parse-number)
@@ -32,3 +33,16 @@
   :depends-on (3b-bmfont/common jsown)
   :components ((:file "package")
                (:file "bmfont-json")))
+
+(defsystem "3b-bmfont/tests"
+  :depends-on ("3b-bmfont/text"
+               "3b-bmfont/xml"
+               "3b-bmfont/json"
+               "parachute")
+  :serial t
+  :components ((:file "test"))
+  :perform (test-op (op c)
+                    (declare (ignore op c))
+                    (or
+                     (symbol-call "PARACHUTE" "TEST"'#:3b-bmfont-test)
+                     (error "tests failed"))))
