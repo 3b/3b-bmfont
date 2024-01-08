@@ -206,7 +206,12 @@
                                   :page (getf c :page)
                                   :chnl (getf c :chnl)
                                   :char (getf c :char)
-                                  :letter (getf c :letter))
+                                  :letter (getf c :letter)
+                                  :index (let ((i (getf c :index)))
+                                           (etypecase i
+                                             (string (parse-integer i))
+                                             (number i)
+                                             (null i))))
           do (setf (gethash (remap-char glyph) h) glyph))
     h))
 
