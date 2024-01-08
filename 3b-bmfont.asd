@@ -46,5 +46,5 @@
                     (unless (eql :passed
                                  (symbol-call "PARACHUTE" "STATUS"
                                               (symbol-call "PARACHUTE" "TEST"
-                                                           '#:3b-bmfont-test))))
-                    (error "tests failed")))
+                                                           '#:3b-bmfont-test)))
+                      (error "tests failed"))))
