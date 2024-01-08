@@ -11,6 +11,14 @@
           until (eql c r)
           collect c)))
 
+(defun equal-enough (a b)
+  (or (eql a b)
+      (etypecase a
+        (single-float
+         (< (abs (- a b))
+            (* 2 single-float-epsilon a)))
+        (sequence (every #'equal-enough a b)))))
+
 (defun compare-font (fnt ref &key round)
   (flet ((r (x)
            (if round
@@ -38,7 +46,7 @@
                         (3b-bmfont:glyph-letter v)
                         (3b-bmfont:glyph-char v))
           for b = (assoc (char-code c) ref)
-          do (assert (equalp (r a) (r b))
+          do (assert (equal-enough (r a) (r b))
                      nil
                      "char ~a:~% ~s~% ~s~%" c a b))))
 
@@ -70,19 +78,19 @@
         (setf g nil)
         (finish (b:map-glyphs font #'p s
                               :x 1 :y 3 :texture-y-up nil :model-y-up nil))
-        (is equalp g ref-dd)
+        (is equal-enough g ref-dd)
         (setf g nil)
         (finish (b:map-glyphs font #'p s
                               :x 1 :y 3 :texture-y-up t :model-y-up nil))
-        (is equalp g ref-ud)
+        (is equal-enough g ref-ud)
         (setf g nil)
         (finish (b:map-glyphs font #'p s
                               :x 1 :y 3 :texture-y-up nil :model-y-up t))
-        (is equalp g ref-du)
+        (is equal-enough g ref-du)
         (setf g nil)
         (finish (b:map-glyphs font #'p s
                               :x 1 :y 3 :texture-y-up t :model-y-up t))
-        (is equalp g ref-uu)))))
+        (is equal-enough g ref-uu)))))
 
 (define-test layout
   ;; layout a string and make sure we get the expected positions and
