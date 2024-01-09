@@ -12,7 +12,8 @@
           collect c)))
 
 (defun equal-enough (a b)
-  (or (eql a b)
+  (equalp a b)
+  #++(or (eql a b)
       (etypecase a
         (single-float
          (< (abs (- a b))
