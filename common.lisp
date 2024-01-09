@@ -1,11 +1,19 @@
 (in-package :3b-bmfont-common)
 
+(declaim (inline sf))
+(defun sf (x)
+  ;; json parser returns rationals, and coercing rationals to
+  ;; single-float gives different results on some lisps, so go through
+  ;; doubles
+  (if (rationalp x)
+      (coerce (coerce x 'double-float) 'single-float)
+      (coerce x 'single-float)))
+
 (deftype v2 () '(simple-array single-float (2)))
 (declaim (inline v2))
 (defun v2 (x y)
   (make-array 2 :element-type 'single-float
-                :initial-contents (list (coerce x 'single-float)
-                                        (coerce y 'single-float))))
+                :initial-contents (list (sf x) (sf y))))
 (defstruct (glyph (:constructor %make-glyph))
   (id 0 :type (signed-byte 32))
   (x 0f0 :type single-float)
@@ -27,7 +35,7 @@
                      (width 0f0) (height 0f0) (xoffset 0f0) (yoffset 0f0)
                      (xadvance 0f0) (page 0) (chnl 0)
                      char letter index origin origin-y-up)
-  (flet ((f (x) (coerce x 'single-float)))
+  (flet ((f (x) (sf x)))
     (declare (inline f))
     (%make-glyph :id id :x (f x) :y (f y)
                  :width (f width) :height (f height)
@@ -99,7 +107,7 @@
         (/ (loop for c in (alexandria:hash-table-values
                            (chars font))
                  sum (or (glyph-xadvance c) 0))
-           (float (hash-table-count (chars font)))))))
+           (sf(hash-table-count (chars font)))))))
 
 (defun find-invalid-glyph (font)
   (let ((chars (chars font)))
@@ -177,7 +185,7 @@
   (gethash (kerning-index lhs rhs) table 0f0))
 
 (defun (setf %kerning) (value table lhs rhs)
-  (setf (gethash (kerning-index lhs rhs) table) (float value 0f0)))
+  (setf (gethash (kerning-index lhs rhs) table) (sf value)))
 
 (defun kerning (font lhs rhs)
   (%kerning (kernings font) lhs rhs))
@@ -200,13 +208,18 @@
                                   :y (getf c :y)
                                   :width (getf c :width)
                                   :height (getf c :height)
-                                  :xoffset (float (getf c :xoffset) 0f0)
-                                  :yoffset (float (getf c :yoffset) 0f0)
+                                  :xoffset (sf (getf c :xoffset))
+                                  :yoffset (sf (getf c :yoffset))
                                   :xadvance (getf c :xadvance)
                                   :page (getf c :page)
                                   :chnl (getf c :chnl)
                                   :char (getf c :char)
-                                  :letter (getf c :letter))
+                                  :letter (getf c :letter)
+                                  :index (let ((i (getf c :index)))
+                                           (etypecase i
+                                             (string (parse-integer i))
+                                             (number i)
+                                             (null i))))
           do (setf (gethash (remap-char glyph) h) glyph))
     h))
 
@@ -252,9 +265,7 @@
 (defun sfloat (x)
   (when (stringp x)
     (setf x (parse-number:parse-number x :float-format 'single-float)))
-  (if (floatp x)
-      x
-      (coerce x 'single-float)))
+  (sf x))
 
 (defun int-bool (x)
   (cond

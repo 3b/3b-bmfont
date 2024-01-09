@@ -62,10 +62,15 @@
            (flexi-streams:make-in-memory-input-stream nil)))
     (let* ((*font* nil)
            (b (make-instance 'bmfont-xml)))
-      (cxml:parse-file
-       stream
-       b
-       :entity-resolver #'resolver)
+      (if (typep stream 'flex:in-memory-input-stream)
+          (cxml:parse
+           stream
+           b
+           :entity-resolver #'resolver)
+          (cxml:parse-file
+           stream
+           b
+           :entity-resolver #'resolver))
       (update-font-properties (f b)))))
 
 (defun write-bmfont-xml (f stream)
@@ -80,6 +85,8 @@
                (cond
                  ((integerp x)
                   x)
+                 ((= x (round x))
+                  (round x))
                  (round
                   (round x))
                  (t
@@ -100,9 +107,9 @@
             (cxml:attribute "smooth" (b (smooth f)))
             (cxml:attribute "aa" (b (aa f)))
             (cxml:attribute "padding"
-                            (format nil "~{~a~^,~}" (padding f)))
+                            (format nil "~{~a~^,~}" (mapcar #'f (padding f))))
             (cxml:attribute "spacing"
-                            (format nil "~{~a~^,~}" (spacing f))))
+                            (format nil "~{~a~^,~}" (mapcar #'f (spacing f)))))
           (cxml:with-element "common"
             (cxml:attribute "lineHeight" (f (line-height f)))
             (cxml:attribute "base" (f (base f)))
@@ -133,7 +140,7 @@
                               (string-downcase
                                (getf (distance-field f) :field-type)))
               (cxml:attribute "distanceRange"
-                              (getf (distance-field f) :distance-range))))
+                              (f (getf (distance-field f) :distance-range)))))
           (cxml:with-element "chars"
             (cxml:attribute "count" (hash-table-count (chars f)))
             (loop for c in (sort (alexandria:hash-table-values
@@ -166,7 +173,7 @@
               (loop
                 for (kidx . a) in (sort (alexandria:hash-table-alist
                                          (kernings f))
-                                         '< :key 'car)
+                                        '< :key 'car)
                 for (c1 . c2) = (kerning-index-characters kidx)
                 do (cxml:with-element "kerning"
                      (cxml:attribute "first" (id c1))
