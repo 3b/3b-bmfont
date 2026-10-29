@@ -90,6 +90,9 @@
   (let ((fnt (finish
               (b:read-bmfont
                (asdf:system-relative-pathname '3b-bmfont "tests/arial.fnt"))))
+        (fnt-crlf (finish
+                   (b:read-bmfont
+                    (asdf:system-relative-pathname '3b-bmfont "tests/arial-crlf.fnt"))))
         (xml (finish
               (b:read-bmfont
                (asdf:system-relative-pathname '3b-bmfont "tests/arial.xml"))))
@@ -101,6 +104,7 @@
                (list (read i) (read i)))))
     (test-layout json (first ref))
     (test-layout fnt (second ref))
+    (test-layout fnt-crlf (second ref))
     (test-layout xml (second ref))))
 
 (define-test write

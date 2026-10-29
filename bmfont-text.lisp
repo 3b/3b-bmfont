@@ -69,7 +69,8 @@
                    (progn (incf s) (until "\""))
                    (until white-space))))
       (list* (tag)
-             (loop while (< s (length line))
+             (loop do (skip-white)
+                   while (< s (length line))
                    collect (key)
                    collect (value))))))
 
